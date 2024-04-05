@@ -5,4 +5,4 @@ RTR is a software tool developed for the HORSE project. The purpose of the RTR i
 ## Installation
 
 Since this is a prototype you can download the repository and run the following command:
-uvicorn IBI-RTR_api:rtr_api
+-uvicorn IBI-RTR_api:rtr_api
