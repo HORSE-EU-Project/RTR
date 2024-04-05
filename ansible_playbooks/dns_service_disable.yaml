@@ -1,0 +1,23 @@
+---
+- name: Disable DNS service
+  hosts: your_dns_servers
+  become: true
+  tasks:
+    - name: Stop and disable DNS service on systemd-based systems
+      systemd:
+        name: dns_service_name
+        state: stopped
+        enabled: no
+      when: ansible_os_family == 'RedHat' or ansible_os_family == 'Debian'
+
+    - name: Stop and disable DNS service on SysV init systems
+      service:
+        name: dns_service_name
+        state: stopped
+        enabled: no
+      when: ansible_os_family == 'Suse' or ansible_os_family == 'FreeBSD'
+
+  handlers:
+    - name: Print message
+      debug:
+        msg: "DNS service is stopped and disabled"

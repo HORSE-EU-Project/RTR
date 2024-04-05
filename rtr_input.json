@@ -1,0 +1,10 @@
+{
+    "_id": "65f42bc144618c3ccdbb8a46",
+    "intent_type": "mitigation",
+    "threat": "ddos",
+    "attacked_host": "10.0.0.1",
+    "mitigation_host": "172.16.2.1",
+    "action": "allow port 53 for domain1",
+    "duration": 3500,
+    "intent_id": "ABC123"
+}

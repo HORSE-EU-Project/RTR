@@ -1,0 +1,46 @@
+---
+- name: Apply rate limiting on DNS server
+  hosts: {{ mitigation_host }}
+  become: true
+  tasks:
+    - name: Install iptables-persistent package (Debian/Ubuntu)
+      package:
+        name: iptables-persistent
+        state: present
+      when: ansible_os_family == 'Debian'
+
+    - name: Install iptables-services package (CentOS/RHEL)
+      package:
+        name: iptables-services
+        state: present
+      when: ansible_os_family == 'RedHat'
+
+    - name: Configure iptables rate limiting rule for DNS
+      iptables:
+        table: filter
+        chain: INPUT
+        protocol: {{ protocol }}
+        destination_port: {{ port }}
+        match: limit
+        limit: {{ requests_per_sec }} 
+        jump: ACCEPT
+      notify:
+        - Save iptables rules
+
+    - name: Save iptables rules
+      command: iptables-save > /etc/iptables/rules.v4
+      notify:
+        - Restart iptables service
+
+  handlers:
+    - name: Restart iptables service (Debian/Ubuntu)
+      service:
+        name: iptables-persistent
+        state: restarted
+      when: ansible_os_family == 'Debian'
+
+    - name: Restart iptables service (CentOS/RHEL)
+      service:
+        name: iptables
+        state: restarted
+      when: ansible_os_family == 'RedHat'
