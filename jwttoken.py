@@ -1,10 +1,11 @@
 from datetime import datetime, timedelta
 from jose import JWTError, jwt
 from mitigation_action_class import TokenData
+import os
 
 # from main import TokenData
-SECRET_KEY = "eyJhbGciOiJIUzI1NiJ9.eyJSb2xlIjoiQWRtaW4iLCJJc3N1ZXIiOiJJc3N1ZXIiLCJVc2VybmFtZSI6IkphdmFJblVzZSIsImV4cCI6MTcxMjMyMDU0NywiaWF0IjoxNzEyMzIwNTQ3fQ.kiw47TGAZxzWCZ7pnPiO9Ujmj_UPx7bPwdGXVmvVL8w"
-ALGORITHM = "HS256"
+SECRET_KEY = os.environ.get("SECRET_KEY")
+ALGORITHM = os.environ.get("ENCRYPTION_ALGORITHM")
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 def create_access_token(data: dict):
     to_encode = data.copy()
