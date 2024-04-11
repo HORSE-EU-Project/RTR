@@ -36,13 +36,10 @@ printer = pprint.PrettyPrinter()
 
 
 rtr_api = FastAPI()
-origins = [
-    "http://localhost:3000",
-    "http://localhost:8000",
-]
+
 rtr_api.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -135,5 +132,3 @@ def convert_id(action):
     # Convert ObjectId to string for serialization
     action["_id"] = str(action["_id"])
     return action
-
-
