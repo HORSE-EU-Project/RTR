@@ -1,0 +1,36 @@
+version: '3'
+
+services:
+  rtr-api:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+    depends_on:
+      - mongodb
+    networks:
+      - rtr-network
+
+  mongodb:
+    image: mongo:latest
+    container_name: mongodb
+    restart: always
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: qwerty1234
+    volumes:
+      - mongodb_data:/data/db
+      - ./mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+      - ./db_confs/mongod.conf:/etc/mongo/mongod.conf
+    networks:
+      - rtr-network
+
+volumes:
+  mongodb_data:
+
+networks:
+  rtr-network:
+    driver: bridge

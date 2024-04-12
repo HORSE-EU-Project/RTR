@@ -1,9 +1,11 @@
+from dotenv import load_dotenv, find_dotenv
 from datetime import datetime, timedelta
 from jose import JWTError, jwt
 from mitigation_action_class import TokenData
 import os
 
 # from main import TokenData
+load_dotenv(find_dotenv())
 SECRET_KEY = os.environ.get("SECRET_KEY")
 ALGORITHM = os.environ.get("ENCRYPTION_ALGORITHM")
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
