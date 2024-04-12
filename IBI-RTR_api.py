@@ -17,7 +17,7 @@ try:
     load_dotenv(find_dotenv())
     db_username = os.environ.get("MONGODB_USERNAME")
     db_password = os.environ.get("MONGODB_PWD")
-    db_ip = os.environ.get("MONGODB_IP")
+    db_name = os.environ.get("MONGODB_IP")
     db_port = os.environ.get("MONGODB_PORT")
     db_auth = os.environ.get("MONGODB_AUTH")
     db_direct_conn = os.environ.get("MONGODB_CONN")
@@ -27,7 +27,7 @@ try:
 
     #connection_str = f"""mongodb+srv://{username}:{password}@{cluster_name}.mongodb.net/?retryWrites=true&w=majority&appName={app_name}"""
     #connection_str = f"""mongodb://127.0.0.1:27017/?directConnection=true&serverSelectionTimeoutMS=2000&appName=mongosh+2.2.1"""
-    connection_str = f"""mongodb://{db_username}:{db_password}@mongodb:{db_port}/?authSource={db_auth}&directConnection={db_direct_conn}&serverSelectionTimeoutMS={db_timeout}"""
+    connection_str = f"""mongodb://{db_username}:{db_password}@{db_name}:{db_port}/?authSource={db_auth}&directConnection={db_direct_conn}&serverSelectionTimeoutMS={db_timeout}"""
 
     client = MongoClient(connection_str)
 
