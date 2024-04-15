@@ -4,9 +4,18 @@ RTR is a software tool developed for the HORSE project. The purpose of the RTR i
 
 ## Installation
 
-Since this is a prototype you can download the repository and run the following command:
-- pip install -r requirements.txt
-- uvicorn IBI-RTR_api:rtr_api
+You can download the repository and run the following command:
+- git clone [<repository_url>](https://github.com/Eight-Bells-Ltd/Reliability-Trust-Resilience-RTR)
+- cd Reliability-Trust-Resilience-RTR
+- git pull origin master
+- docker compose build
+- docker compose run -d (-d: runs the application in the background)
+
+Dockerfile specifies instructions to run 2 services:
+- The first service is the application itself (fastAPI, regular expression checks etc)
+- The second service is the mongodb database, it creates a dockerized instance of mongodb that stores all the information needed by the RTR
+
+By running building the dockers, the two containerized apps are deployed simultaneously and rum in parallel.  
 
 
 ## The main App
