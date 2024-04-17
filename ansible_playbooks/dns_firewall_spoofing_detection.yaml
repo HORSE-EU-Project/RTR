@@ -1,14 +1,14 @@
 ---
 - name: Configure firewall rules for spoofing detection
-  hosts: firewall_devices
+  hosts: {{mitigation_host}}
   become: true
   tasks:
     - name: Configure anti-spoofing rules
       iptables:
         chain: INPUT
-        in_interface: "{{ interface_name }}"
+        in_interface: {{ interface_name }}
         match: iprange
-        destination: "{{ allowed_ip_network }}"
+        destination: {{ ipv4_and_subnet }}
         invert_destination: true
         jump: DROP
       when: ansible_os_family == "Debian" or ansible_os_family == "RedHat"
