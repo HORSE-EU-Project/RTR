@@ -13,7 +13,8 @@ regex_patterns = {
     'ipv4_and_subnet': r'\b(?:\d{1,3}\.){3}\d{1,3}(?:/\d{1,2})?\b',
     'protocol': r'\b(tcp|udp)\b',
     'requests_per_sec': r'\b(\d{1,3}\/s)\b',
-    'port': rf'\b(?:{"|".join(expressions)})\b\s*(\d+(?:,\d+)*)'
+    'port': rf'\b(?:{"|".join(expressions)})\b\s*(\d+(?:,\d+)*)',
+    'interface_name': r'\b(eth\d+|en[pso]\w*|wlan\d+|lo)\b'
 }
 
 
@@ -23,7 +24,7 @@ class playbook_creator:
         self.current_patterns = [('dns_rate_limiting.yaml', r'\b(reduce|decrease|requests|number|rate|limit|dns|server|service|\d{1,3}\/s)\b'),
                             ('dns_service_disbale.yaml', r'\b(disable|shut down|dns|server|service)\b'), 
                             ('dns_service_handover', r'\b(hand over|dns|server|service)\b'),
-                            ('dns_firewall_spoofing_detection.yaml', r'\b(spoof|spoofing|block|stop|ip|ip range)\b'),
+                            ('dns_firewall_spoofing_detection.yaml', r'\b(spoof|spoofing|firewall|interface|block|stop|ip|ip range)\b'),
                             ('anycast_blackhole', r'\b(redirect|direct|dns|server|service|traffic|igress|blackhole)\b')]
         self.mitigation_action = action_from_IBI
         self.chosen_playbook = self.match_mitigation_action_with_playbook()
@@ -63,14 +64,18 @@ class playbook_creator:
         variables = self.extract_variables_from_yaml(os.path.join("ansible_playbooks", self.chosen_playbook))
         playbook_variables_dict = {}
         
-        print("hello")
+       # print(f"hello {variables}")
         for variable in variables:
+            #print(f"Current variable {variable}")
             if variable == 'mitigation_host':
                 playbook_variables_dict['mitigation_host'] = self.mitigation_action.mitigation_host
                 continue
+            
+            #print(f"Regex pattern {regex_patterns[variable]}")
             variable_value = re.findall(regex_patterns[variable], self.mitigation_action.action)
+            #print(f"Variable value {variable_value}")
             playbook_variables_dict[variable] = variable_value[0]
-        print("Variables: ",playbook_variables_dict)
+        #print("Variables: ",playbook_variables_dict)
         # Load the template file
         
         env = Environment(loader=FileSystemLoader('ansible_playbooks'))
@@ -104,7 +109,7 @@ class playbook_creator:
 
 
 if __name__ == "__main__":
-    mitigation_action = mitigation_action_model(command='add', intent_type='mitigation', threat='ddos', attacked_host='10.0.0.1', mitigation_host='172.16.2.1', action='Reduce the number of request to the dns server to a 30/s for port 54, protocol udp', duration=4000,intent_id='ABC123')
+    mitigation_action = mitigation_action_model(command='add', intent_type='mitigation', threat='ddos', attacked_host='10.0.0.1', mitigation_host='172.16.2.1', action='Allow traffic from iprange 192.69.0.1/24 to interface wlan1', duration=4000,intent_id='ABC123')
     playbook = playbook_creator(mitigation_action)
     palybok_txt = playbook.fill_in_ansible_playbook()
     playbook.simple_uploader(playbook_text=palybok_txt)
