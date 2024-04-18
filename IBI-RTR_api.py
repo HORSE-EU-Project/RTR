@@ -12,6 +12,7 @@ from oauth import get_current_user
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.middleware.cors import CORSMiddleware
 from jwttoken import create_access_token
+from send_mitigation_rules import simple_uploader
 
 try:
     load_dotenv(find_dotenv())
@@ -112,9 +113,13 @@ def register_new_action(new_action: mitigation_action_model, token:OAuth2Passwor
                 raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"An identical document was found")
                 
             inserted_action = mitigation_actions_collection.insert_one(new_action.dict())
-            playbook = playbook_creator(new_action)
-            playbook.fill_in_ansible_playbook()
             inserted_action_id = str(inserted_action.inserted_id)
+            playbook = playbook_creator(new_action)
+            complete_playbook = playbook.fill_in_ansible_playbook()
+            action_id = "123"
+            action_definition = "Service Modification"
+            service = "DNS"
+            simple_uploader(action_id, action_definition, service, complete_playbook)
             return {"New action unique id is":inserted_action_id}
     except Exception as e:
         print(f"I could not store a new action to the database. Error {e}")
