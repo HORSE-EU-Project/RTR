@@ -2,13 +2,26 @@ import requests
 
 
 
-def simple_uploader():
-    test_file = open("mitigation_rules.yaml", "rb")
+def simple_uploader(action_id, action_definition, service, playbook_yaml):
+    #test_file = open("mitigation_rules.yaml", "rb")
 
 
     receiver_url = "http://httpbin.org/post"
 
-    test_response = requests.post(receiver_url, files = {"form_field_name": test_file})
+    params = {
+        "actionID": action_id,
+        "action_definition": action_definition,
+        "service": service
+    }
+
+    headers = {
+        "Content-Type": "text/yaml"
+    }
+    
+
+    #data = playbook_yaml
+
+    test_response = requests.post(receiver_url, params=params, headers = headers, data = playbook_yaml)
 
     if test_response.ok:
         print("Upload completed successfully!")
