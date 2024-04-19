@@ -4,24 +4,23 @@ RTR is a software tool developed for the HORSE project. The purpose of the RTR i
 
 ## Installation
 
-You can download the repository and run the following command:
-- git clone [<repository_url>](https://github.com/Eight-Bells-Ltd/Reliability-Trust-Resilience-RTR.git)
+Downlad and run the application:
+- git clone [https://github.com/Eight-Bells-Ltd/Reliability-Trust-Resilience-RTR.git](https://github.com/Eight-Bells-Ltd/Reliability-Trust-Resilience-RTR.git)
 - cd Reliability-Trust-Resilience-RTR
 - git pull origin master
 - docker-compose build
 - docker-compose run -d (-d: runs the application in the background)
 
-Dockerfile specifies instructions to run 2 services:
-- The first service is the application itself (fastAPI, regular expression checks etc.). The fastAPI application runs on [uvicorn](https://www.uvicorn.org/). Inside Dockerfile we 
-specify the host to be 0.0.0.0, this way it will listen on all available interfaces within the container, making your application accessible from outside the container as well, including from the host machine or other machines on the network. We also specify the listening port to 8000. This port is mapped again in docker-compose.yaml in order for port 8000 to be exposed to the outside world.
-- The second service is the mongodb database, it creates a dockerized instance of mongodb that stores all the information needed by the RTR. For the initialization of the database two files are needed, [mongo-init.js](https://github.com/Eight-Bells-Ltd/Reliability-Trust-Resilience-RTR/blob/main/mongo-init.js) and [mongod.conf](https://github.com/Eight-Bells-Ltd/Reliability-Trust-Resilience-RTR/blob/main/mongod.conf). 
- - Mongo-init configures two collection inside the database with a validation schema for each one. These are:
-  - mitigation actions
-  - users
-The Dockerfile also specifies the creation of a closed network (rtr-network) to foster the communication between the app and the database. 
 
-
-By running building the dockers, the two containerized apps are deployed simultaneously and run in parallel.  
+## Docker-compose
+This Docker Compose file [docker-compose.yml](https://github.com/Eight-Bells-Ltd/Reliability-Trust-Resilience-RTR/blob/main/docker-compose.yml) defines a multi-container application with two services: [rtr-api](https://github.com/Eight-Bells-Ltd/Reliability-Trust-Resilience-RTR/blob/main/IBI-RTR_api.py) and mongodb. Here's what each section does:
+1. rtr-api Service:
+Builds the Docker image for the rtr-api service using the Dockerfile in the current directory. We map port 8000 on the host to port 8000 in the container, allowing access to the FastAPI application running inside the container. We mount the current directory (where the Docker Compose file is located) to the /app directory inside the container, allowing live code reloading during development. This service depends on mongodb, meaning that the mongodb service needs to be up and running first. Finally, we connect the rtr-api service to the rtr-network network.
+2. mongodb service:
+We specify the Docker image to use for the mongodb service. We also set the container name to "mongodb" and configure the container to restart if it terminates unexpectedly. We  map default port 27017 on the host to port 27017 in the container, allowing access to the MongoDB server. The environment variables for configuring MongoDB are the root username and password for the MongoDB instance. We define volumes for persisting MongoDB data, initializing the database with [mongo-init.js](https://github.com/Eight-Bells-Ltd/Reliability-Trust-Resilience-RTR/blob/main/mongo-init.js), and providing a custom MongoDB configuration file [mongod.conf](https://github.com/Eight-Bells-Ltd/Reliability-Trust-Resilience-RTR/blob/main/mongod.conf). Finally, we also connect 'mongodb' to the rtr-network.
+ - [mongo-init.js](https://github.com/Eight-Bells-Ltd/Reliability-Trust-Resilience-RTR/blob/main/mongo-init.js) creates two collections, each with a predefined structure enforced by JSON schemas for validation. The "mitigation_actions" collection specifies requirements for documents representing mitigation actions, including fields like intent type, threat, and duration. Similarly, the "users" collection defines constraints for user documents, mandating fields such as username, email, and password, with email validation using a regular expression. These schemas ensure data consistency and integrity by validating documents against specified criteria upon insertion or update, enhancing the reliability and usability of the MongoDB database.
+ - [mongod.conf](https://github.com/Eight-Bells-Ltd/Reliability-Trust-Resilience-RTR/blob/main/mongod.conf) specifies the settings for running a MongoDB instance. In the storage section, the dbPath parameter indicates the directory where MongoDB will store its database files, set here to /data/db. The network settings define that MongoDB will bind to all available network interfaces (0.0.0.0) and listen on port 27017. Additionally, the security section enables access control and user authentication by setting authorization to enabled. This ensures that clients must authenticate themselves before accessing the database, enhancing the security of the MongoDB instance. Overall, this configuration file establishes a MongoDB environment with specified storage, network, and security settings.
+  
 
 
 ## The main App
