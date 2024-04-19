@@ -5,7 +5,7 @@ import requests
 def simple_uploader(action_id, action_definition, service, playbook_yaml):
     #test_file = open("mitigation_rules.yaml", "rb")
 
-
+    
     receiver_url = "http://httpbin.org/post"
 
     params = {
@@ -31,4 +31,8 @@ def simple_uploader(action_id, action_definition, service, playbook_yaml):
 
 
 if __name__ == '__main__':
-    simple_uploader()
+    action_id = "123"
+    action_definition = "Service Modification"
+    service = "DNS"
+    playbook_yaml = open("ansible_playbooks/dns_rate_limiting.yaml", "rb")
+    simple_uploader(action_id, action_definition, service, playbook_yaml)
