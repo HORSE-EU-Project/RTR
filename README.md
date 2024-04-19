@@ -5,17 +5,23 @@ RTR is a software tool developed for the HORSE project. The purpose of the RTR i
 ## Installation
 
 You can download the repository and run the following command:
-- git clone [<repository_url>](https://github.com/Eight-Bells-Ltd/Reliability-Trust-Resilience-RTR)
+- git clone [<repository_url>](https://github.com/Eight-Bells-Ltd/Reliability-Trust-Resilience-RTR.git)
 - cd Reliability-Trust-Resilience-RTR
 - git pull origin master
-- docker compose build
-- docker compose run -d (-d: runs the application in the background)
+- docker-compose build
+- docker-compose run -d (-d: runs the application in the background)
 
 Dockerfile specifies instructions to run 2 services:
-- The first service is the application itself (fastAPI, regular expression checks etc)
-- The second service is the mongodb database, it creates a dockerized instance of mongodb that stores all the information needed by the RTR
+- The first service is the application itself (fastAPI, regular expression checks etc.). The fastAPI application runs on [uvicorn](https://www.uvicorn.org/). Inside Dockerfile we 
+specify the host to be 0.0.0.0, this way it will listen on all available interfaces within the container, making your application accessible from outside the container as well, including from the host machine or other machines on the network. We also specify the listening port to 8000. This port is mapped again in docker-compose.yaml in order for port 8000 to be exposed to the outside world.
+- The second service is the mongodb database, it creates a dockerized instance of mongodb that stores all the information needed by the RTR. For the initialization of the database two files are needed, [mongo-init.js](https://github.com/Eight-Bells-Ltd/Reliability-Trust-Resilience-RTR/blob/main/mongo-init.js) and [mongod.conf](https://github.com/Eight-Bells-Ltd/Reliability-Trust-Resilience-RTR/blob/main/mongod.conf). 
+ - Mongo-init configures two collection inside the database with a validation schema for each one. These are:
+  - mitigation actions
+  - users
+The Dockerfile also specifies the creation of a closed network (rtr-network) to foster the communication between the app and the database. 
 
-By running building the dockers, the two containerized apps are deployed simultaneously and rum in parallel.  
+
+By running building the dockers, the two containerized apps are deployed simultaneously and run in parallel.  
 
 
 ## The main App
