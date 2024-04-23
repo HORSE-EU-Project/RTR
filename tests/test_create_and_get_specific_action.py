@@ -50,3 +50,35 @@ def test_login_and_get_all_actions():
 
     response_for_new_action = requests.post(f"{base_url}/actions", headers=headers_for_action_post, json=data)
     assert response_for_new_action.status_code in [200,201]
+
+    headers_for_action_get = {
+        'accept': 'application/json',
+        'Content-Type': 'application/json',
+        'Authorization': f'Bearer {access_token}'
+    }
+
+    response_for_new_action = convert_id(response_for_new_action.json())
+    mitigation_id = response_for_new_action['_id']
+    response_for_get_action = requests.get(f"{base_url}/actions/{mitigation_id}", headers=headers_for_action_get)
+    assert response_for_get_action.status_code == 200
+
+    # Testing for a non-existent ID
+    invalid_mitigation_id = "invalid_id"
+    response_for_invalid_action = requests.get(f"{base_url}/actions/{invalid_mitigation_id}", headers=headers_for_action_get)
+    assert response_for_invalid_action.status_code == 404
+
+    headers_for_action_delete = {
+        'accept': 'application/json',
+        'Content-Type': 'application/json',
+        'Authorization': f'Bearer {access_token}'
+    }
+
+    response_for_get_action = requests.delete(f"{base_url}/actions/{mitigation_id}", headers=headers_for_action_delete)
+    assert response_for_get_action.status_code == 200
+
+
+def convert_id(action):
+    """Convert MongoDB document for serialization."""
+    # Convert ObjectId to string for serialization
+    action["_id"] = str(action["_id"])
+    return action
