@@ -119,7 +119,7 @@ def register_new_action(new_action: mitigation_action_model, token:OAuth2Passwor
             action_id = "123"
             action_definition = "Service Modification"
             service = "DNS"
-            simple_uploader(action_id, action_definition, service, complete_playbook)
+            simple_uploader(inserted_action_id, action_definition, service, complete_playbook)
             return {"New action unique id is":inserted_action_id}
     except Exception as e:
         print(f"I could not store a new action to the database. Error {e}")
