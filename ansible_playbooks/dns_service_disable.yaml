@@ -1,6 +1,6 @@
 ---
 - name: Disable DNS service
-  hosts: your_dns_servers
+  hosts: {{mitigation_host}}
   become: true
   tasks:
     - name: Stop and disable DNS service on systemd-based systems

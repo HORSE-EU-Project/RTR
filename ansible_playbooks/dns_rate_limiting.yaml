@@ -31,6 +31,7 @@
       command: iptables-save > /etc/iptables/rules.v4
       notify:
         - Restart iptables service
+      
 
   handlers:
     - name: Restart iptables service (Debian/Ubuntu)

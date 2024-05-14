@@ -6,22 +6,23 @@ def simple_uploader(action_id, action_definition, service, playbook_yaml):
     #test_file = open("mitigation_rules.yaml", "rb")
 
     
-    receiver_url = "http://httpbin.org/post"
-
+    #receiver_url = "http://httpbin.org/post"
+    receiver_url = "http://127.0.0.1:9000/rtr_request"
     params = {
-        "actionID": action_id,
-        "action_definition": action_definition,
-        "service": service
+        "service": service,
+        "actionType": action_definition,
+        "actionID": action_id
     }
 
     headers = {
-        "Content-Type": "text/yaml"
+        "accept": "application/json",
+        "Content-Type": "application/yaml"
     }
     
 
     #data = playbook_yaml
-
-    test_response = requests.post(receiver_url, params=params, headers = headers, data = playbook_yaml)
+    playbook_content = playbook_yaml
+    test_response = requests.post(receiver_url, params=params, headers = headers, data = playbook_content)
 
     if test_response.ok:
         print("Upload completed successfully!")
@@ -35,4 +36,6 @@ if __name__ == '__main__':
     action_definition = "Service Modification"
     service = "DNS"
     playbook_yaml = open("ansible_playbooks/dns_rate_limiting.yaml", "rb")
-    simple_uploader(action_id, action_definition, service, playbook_yaml)
+    playbook_content = playbook_yaml.read()
+    #print(content)
+    simple_uploader(action_id, action_definition, service, playbook_content)
