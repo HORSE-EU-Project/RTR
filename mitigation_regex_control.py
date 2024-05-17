@@ -22,9 +22,9 @@ regex_patterns = {
 class playbook_creator:
     def __init__(self, action_from_IBI):
         self.current_patterns = [('dns_rate_limiting.yaml', r'\b(reduce|decrease|requests|number|rate|limit|dns|server|service|\d{1,3}\/s)\b'),
-                            ('dns_service_disbale.yaml', r'\b(disable|shut down|dns|server|service)\b'), 
+                            ('dns_service_disable.yaml', r'\b(disable|shut down|dns|server|service)\b'), 
                             ('dns_service_handover', r'\b(hand over|dns|server|service)\b'),
-                            ('dns_firewall_spoofing_detection.yaml', r'\b(spoof|spoofing|firewall|interface|block|stop|ip|ip range)\b'),
+                            ('dns_firewall_spoofing_detection.yaml', r'\b(spoof|spoofed|destination|spoofing|packets|firewall|interface|block|stop|ip|ip range)\b'),
                             ('anycast_blackhole', r'\b(redirect|direct|dns|server|service|traffic|igress|blackhole)\b')]
         self.mitigation_action = action_from_IBI
         self.chosen_playbook = self.match_mitigation_action_with_playbook()
@@ -49,7 +49,7 @@ class playbook_creator:
     def extract_variables_from_yaml(self,yaml_file):
         variables = []
         jinja2_pattern = r'\{\{(.+?)\}\}'  # Regular expression to match Jinja2 expressions
-
+        print(f"Current dir {os.getcwd()}")
         with open(yaml_file, 'r') as f:
             yaml_content = f.read()
             for line in yaml_content.split('\n'):
@@ -109,7 +109,7 @@ class playbook_creator:
 
 
 if __name__ == "__main__":
-    mitigation_action = mitigation_action_model(command='add', intent_type='mitigation', threat='ddos', attacked_host='10.0.0.1', mitigation_host='172.16.2.1', action='Allow traffic from iprange 192.69.0.1/24 to interface wlan1', duration=4000,intent_id='ABC123')
+    mitigation_action = mitigation_action_model(command='add', intent_type='mitigation', threat='ddos', attacked_host='11.0.0.1', mitigation_host='172.16.2.1', action='Block potentially spoofed packets with destination 123.12.3.4/24 in interface eth0', duration=4000,intent_id='ABC123')
     playbook = playbook_creator(mitigation_action)
     palybok_txt = playbook.fill_in_ansible_playbook()
     playbook.simple_uploader(playbook_text=palybok_txt)

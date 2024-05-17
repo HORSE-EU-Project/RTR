@@ -1,4 +1,5 @@
 import requests
+from pprint import pprint
 
 def test_login_and_get_all_actions():
     base_url = "http://127.0.0.1:8000"
@@ -36,6 +37,9 @@ def test_login_and_get_all_actions():
     }
     response_actions = requests.get(f"{base_url}/actions", headers=headers_for_actions)
     assert response_actions.status_code == 200
-    print(response_actions.json())
+    stored_actions = response_actions.json()['stored actions']
+    for action in stored_actions:
+        pprint(action)
+    #print(response_actions.json()['stored actions'])
     #expected_items = [{"access_token":"created"},{"token_type":"bearer"}]
     #assert response.json() == expected_items

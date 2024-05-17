@@ -1,5 +1,5 @@
 import requests
-
+from pprint import pprint
 def test_login_and_get_all_actions():
     base_url = "http://127.0.0.1:8000"
     
@@ -42,13 +42,14 @@ def test_login_and_get_all_actions():
         "intent_type": "mitigation",
         "threat": "ddos",
         "attacked_host": "198.2.19.0",
-        "mitigation_host": "19.19.13.181",
-        "action": "Set the number of request to the dns server to a 5/s for port 55, protocol udp",
+        "mitigation_host": "19.190.13.181",
+        "action": "allow traffic from iprange 192.69.0.1/25 to interface wlan1",
         "duration": 800,
-        "intent_id": "B123"
+        "intent_id": "adfB3"
     }
 
     response_for_new_action = requests.post(f"{base_url}/actions", headers=headers_for_action_post, json=data)
+    print(f"Response fom new action creation {response_for_new_action.json()}")
     assert response_for_new_action.status_code in [200,201]
 
     headers_for_action_get = {
@@ -64,11 +65,14 @@ def test_login_and_get_all_actions():
     mitigation_id = response_for_new_action.json()['New action unique id is']
     print(type(mitigation_id))
     response_for_get_action = requests.get(f"{base_url}/action_by_id/{mitigation_id}", headers=headers_for_action_get)
+    print(f"This is the response for the get request with id {mitigation_id}")
+    pprint(response_for_get_action.json())
     assert response_for_get_action.status_code == 200
 
     # Testing for a non-existent ID
     invalid_mitigation_id = "invalid_id"
     response_for_invalid_action = requests.get(f"{base_url}/action_by_id/{invalid_mitigation_id}", headers=headers_for_action_get)
+    print(f"Response for GET request with invalid action id {response_for_invalid_action}")
     assert response_for_invalid_action.status_code == 404
 
     headers_for_action_delete = {
@@ -78,8 +82,12 @@ def test_login_and_get_all_actions():
     }
 
     response_for_get_action = requests.delete(f"{base_url}/actions/{mitigation_id}", headers=headers_for_action_delete)
+    print(f"Response for successful DELETE request {response_for_get_action}")
     assert response_for_get_action.status_code in [200,204]
 
+    response_for_deleted_action = requests.get(f"{base_url}/action_by_id/{mitigation_id}", headers=headers_for_action_get)
+    print(f"Response for GET request with deleted action id {response_for_deleted_action}")
+    assert response_for_invalid_action.status_code == 404
 
 def convert_id(action):
     """Convert MongoDB document for serialization."""

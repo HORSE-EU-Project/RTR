@@ -2,7 +2,7 @@ import requests
 
 def test_home_page():
     base_url = "http://127.0.0.1:8000"
-    print("hello")
+    
     # Send a GET request to the "/items/" endpoint
     response = requests.get(f"{base_url}")
     
@@ -12,3 +12,4 @@ def test_home_page():
     # Assert that the response contains the expected list of items
     expected_items = {"message":"Welcome to my API"}
     assert response.json() == expected_items
+    print(response.json())
