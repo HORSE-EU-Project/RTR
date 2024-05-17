@@ -6,8 +6,8 @@ def simple_uploader(action_id, action_definition, service, playbook_yaml):
     #test_file = open("mitigation_rules.yaml", "rb")
 
     
-    receiver_url = "http://httpbin.org/post"
-    #receiver_url = "http://127.0.0.1:9000/rtr_request"
+    #receiver_url = "http://httpbin.org/post"
+    receiver_url = "http://192.168.56.1:8000/rtr_request"
     params = {
         "service": service,
         "actionType": action_definition,
