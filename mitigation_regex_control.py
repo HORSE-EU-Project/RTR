@@ -109,7 +109,7 @@ class playbook_creator:
 
 
 if __name__ == "__main__":
-    mitigation_action = mitigation_action_model(command='add', intent_type='mitigation', threat='ddos', attacked_host='11.0.0.1', mitigation_host='172.16.2.1', action='Block potentially spoofed packets with destination 123.12.3.4/24 in interface eth0', duration=4000,intent_id='ABC123')
+    mitigation_action = mitigation_action_model(command='add', intent_type='mitigation', threat='ddos', attacked_host='11.0.0.1', mitigation_host='172.16.2.1', action='disable dns server', duration=4000,intent_id='ABC123')
     playbook = playbook_creator(mitigation_action)
     palybok_txt = playbook.fill_in_ansible_playbook()
     playbook.simple_uploader(playbook_text=palybok_txt)

@@ -8,7 +8,6 @@ def test_login():
         'Content-Type': 'application/x-www-form-urlencoded'
     }
 
-    # Send a GET request to the "/items/" endpoint
     
     data = {
         'grant_type': '',
@@ -18,7 +17,7 @@ def test_login():
         'client_id': '',
         'client_secret': ''
     }
-    
+    #POST Login Request
     response = requests.post(f"{base_url}/login", headers=headers, data=data)
     
     # Assert that the response status code is 200 (OK)
@@ -27,5 +26,4 @@ def test_login():
     # Assert that the response contains the expected list of items
     if 'access_token' in response.json():
         print(f"Authentication token: {response.json()['access_token']}")
-    #expected_items = [{"access_token":"created"},{"token_type":"bearer"}]
-    #assert response.json() == expected_items
+    
