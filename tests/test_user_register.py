@@ -10,9 +10,9 @@ def test_home_page():
 
     
     data = {
-        "username": "user5",
-        "email": "user5@gmail.com",
-        "password": "user5"
+        "username": "user1",
+        "email": "user1@gmail.com",
+        "password": "user1"
     }
     #POST REQUEST FOR USER REGISTER
     response = requests.post(f"{base_url}/register", headers=headers, json=data)
