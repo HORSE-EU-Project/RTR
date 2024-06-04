@@ -116,10 +116,10 @@ def register_new_action(new_action: mitigation_action_model, token:OAuth2Passwor
             inserted_action_id = str(inserted_action.inserted_id)
             playbook = playbook_creator(new_action)
             complete_playbook = playbook.fill_in_ansible_playbook()
-            action_id = "123"
-            action_definition = "Service Modification"
+            #action_id = inserted_action_id
+            action_definition = "service modification"
             service = "DNS"
-            simple_uploader(inserted_action_id, action_definition, service, complete_playbook)
+            simple_uploader(new_action.mitigation_host, inserted_action_id, action_definition, service, complete_playbook)
             return {"New action unique id is":inserted_action_id}
     except Exception as e:
         print(f"I could not store a new action to the database. Error {e}")

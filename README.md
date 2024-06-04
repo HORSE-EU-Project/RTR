@@ -8,8 +8,8 @@ Downlad and run the application:
 - git clone [https://github.com/Eight-Bells-Ltd/Reliability-Trust-Resilience-RTR.git](https://github.com/Eight-Bells-Ltd/Reliability-Trust-Resilience-RTR.git)
 - cd Reliability-Trust-Resilience-RTR
 - git pull origin master
-- docker-compose build
-- docker-compose up -d (-d: runs the application in the background)
+- docker compose build
+- docker compose up -d (-d: runs the application in the background)
 
 ## Docker
 This Dockerfile sets up an environment for running [rtr-api](https://github.com/Eight-Bells-Ltd/Reliability-Trust-Resilience-RTR/blob/main/IBI-RTR_api.py). It begins by specifying the base image as Python 3.11.5, establishing the working directory within the container as /app. Dependencies listed in requirements.txt are then installed using pip, ensuring the necessary packages are available. The FastAPI application code is copied into the container's working directory. Port 8000 is exposed to allow external access to the FastAPI application. Finally, the Dockerfile specifies the command to run the application, launching it with Uvicorn and binding to host 0.0.0.0 and port 8000. This Dockerfile encapsulates all the steps needed to build a Docker image capable of running the FastAPI application within a container, providing a consistent and reproducible environment for deployment.
