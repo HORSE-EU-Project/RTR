@@ -1,0 +1,53 @@
+---
+- name: DNS server handover
+  hosts: "{{ mitigation_host }}"  # Specify the target hosts
+  become: true
+  tasks:
+    - name: Redirect internal DNS traffic to secondary DNS server
+      iptables:
+        chain: PREROUTING
+        table: 
+        protocol: 
+        source: "{{ internal_network }}"
+        destination: "{{ primary_dns_ip }}"
+        destination_port: "{{ dns_port }}"
+        jump: DNAT
+        to_destination: "{{ secondary_dns_ip }}:{{ dns_port }}"
+      when: inventory_hostname == 'primary_dns'
+
+    - name: Ensure external DNS traffic goes to the primary DNS server
+      iptables:
+        chain: PREROUTING
+        table: 
+        protocol: 
+        source: "! {{ internal_network }}"
+        destination: "{{ primary_dns_ip }}"
+        destination_port: "{{ dns_port }}"
+        jump: ACCEPT
+      when: inventory_hostname == 'primary_dns'
+
+    - name: Save iptables rules on Debian/Ubuntu
+      command: iptables-save > /etc/iptables/rules.v4
+      when: ansible_os_family == 'Debian'
+      notify:
+        - Restart iptables service
+
+    - name: Save iptables rules on CentOS/RHEL
+      command: iptables-save > /etc/sysconfig/iptables
+      when: ansible_os_family == 'RedHat'
+      notify:
+        - Restart iptables service
+  
+  handlers:
+    - name: Restart iptables service (Debian/Ubuntu)
+      service:
+        name: iptables-persistent
+        state: restarted
+      when: ansible_os_family == 'Debian'
+
+    - name: Restart iptables service (CentOS/RHEL)
+      service:
+        name: iptables
+        state: restarted
+      when: ansible_os_family == 'RedHat'
+

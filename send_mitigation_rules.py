@@ -2,13 +2,15 @@ import requests
 
 
 
-def simple_uploader(action_id, action_definition, service, playbook_yaml):
+def simple_uploader(target_ip, action_id, action_definition, service, playbook_yaml):
     #test_file = open("mitigation_rules.yaml", "rb")
 
     
     receiver_url = "http://httpbin.org/post"
     
     params = {
+        "target_ip": target_ip,
+        "port": None,
         "service": service,
         "actionType": action_definition,
         "actionID": action_id
@@ -26,9 +28,9 @@ def simple_uploader(action_id, action_definition, service, playbook_yaml):
 
     if test_response.ok:
         print("Upload completed successfully!")
-        print(test_response.text)
+        print(f"Request body {test_response.text}")
     else:
-        print("Something went wrong!")
+        print(f"Something went wrong! Status code: {test_response.status_code}")
 
 
 if __name__ == '__main__':
