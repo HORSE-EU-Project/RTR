@@ -44,7 +44,7 @@ def test_login_and_get_all_actions():
         "mitigation_host": "19.190.13.181",
         "action": "Set the number of request to the dns server to a 5/s for port 55, protocol udp",
         "duration": 8400,
-        "intent_id": "adfB3"
+        "intent_id": "afsdaB3"
     }
     # POST REQUEST FOR NEW ACTION
     response_for_new_action = requests.post(f"{base_url}/actions", headers=headers_for_action_post, json=data)
@@ -93,7 +93,7 @@ def test_login_and_get_all_actions():
         "mitigation_host": "19.190.13.181",
         "action": "Set the number of request to the dns server to a 5/s for port 55, protocol udp",
         "duration": 8400,
-        "intent_id": "adfB3"
+        "intent_id": "afsdaB3"
     }
     #POST DELETE REQUEST WITH ACTION ID
     response_for_new_action = requests.post(f"{base_url}/actions", headers=headers_for_action_post, json=delete_data)
