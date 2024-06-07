@@ -1,5 +1,5 @@
 from dotenv import load_dotenv, find_dotenv
-from fastapi import FastAPI, Response, status, HTTPException, Depends
+from fastapi import FastAPI, Depends, Response, status, HTTPException, Depends
 import os
 import pprint
 from pymongo import MongoClient
@@ -118,7 +118,6 @@ def register_new_action(new_action: mitigation_action_model, token:OAuth2Passwor
             inserted_action_id = new_action.intent_id
             playbook = playbook_creator(new_action)
             complete_playbook = playbook.fill_in_ansible_playbook()
-            action_id = "123"
             action_definition = "Service Modification"
             service = "DNS"
 
@@ -142,18 +141,18 @@ def register_new_action(new_action: mitigation_action_model, token:OAuth2Passwor
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Document failed validation")
 
 
-@rtr_api.delete("/actions/{id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_action(id: str, token:OAuth2PasswordRequestForm = Depends(get_current_user)):
-    
-    try:
-        _id = ObjectId(id)
-        deleted_mitigation_action = mitigation_actions_collection.find_one_and_delete({"_id": _id})
-        if deleted_mitigation_action == None:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"post with id: {id} was not found")
-        return "Action deleted from RTR database"
-        
-    except Exception as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Something went wrong")
+#@rtr_api.delete("/actions/{id}", status_code=status.HTTP_204_NO_CONTENT)
+#def delete_action(id: str, token:OAuth2PasswordRequestForm = Depends(get_current_user)):
+#    
+#    try:
+#        _id = ObjectId(id)
+#        deleted_mitigation_action = mitigation_actions_collection.find_one_and_delete({"_id": _id})
+#        if deleted_mitigation_action == None:
+#            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"post with id: {id} was not found")
+#        return "Action deleted from RTR database"
+#        
+#    except Exception as e:
+#        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Something went wrong")
 
 
 def convert_id(action):
