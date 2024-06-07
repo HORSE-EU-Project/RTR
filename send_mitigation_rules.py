@@ -2,13 +2,15 @@ import requests
 
 
 
-def simple_uploader(action_id, action_definition, service, playbook_yaml):
+def simple_uploader(target_ip, action_id, action_definition, service, playbook_yaml):
     #test_file = open("mitigation_rules.yaml", "rb")
 
     
     receiver_url = "http://httpbin.org/post"
-    #receiver_url = "http://192.168.56.1:8000/rtr_request"
+    
     params = {
+        "target_ip": target_ip,
+        "port": None,
         "service": service,
         "actionType": action_definition,
         "actionID": action_id
