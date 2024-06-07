@@ -80,26 +80,28 @@ def login(request:OAuth2PasswordRequestForm = Depends()):
 
 @rtr_api.get("/actions")
 def get_all_mitigation_actions(token : OAuth2PasswordRequestForm = Depends(get_current_user)):
-    stored_mitigation_actions = mitigation_actions_collection.find({})
+    stored_mitigation_actions = mitigation_actions_collection.find({}, {'_id': 0})
     #print(stored_mitigation_actions)
-    actions = [convert_id(action) for action in stored_mitigation_actions]
+    actions = [action for action in stored_mitigation_actions]
     for action in stored_mitigation_actions:
         printer.pprint(action)
    
     return {"stored actions":actions}
 
-@rtr_api.get("/action_by_id/{mitigation_id}")
-def get_action_based_on_id(mitigation_id: str, token:OAuth2PasswordRequestForm = Depends(get_current_user)):
-    print(mitigation_id)
+@rtr_api.get("/action_by_id/{intent_id}")
+def get_action_based_on_id(intent_id: str, token:OAuth2PasswordRequestForm = Depends(get_current_user)):
+    #print(mitigation_id)
     
     try:
-        _id = ObjectId(mitigation_id)
-        mitigation_action = mitigation_actions_collection.find_one({"_id": _id})
+        #_id = ObjectId(mitigation_id)
+        mitigation_action = mitigation_actions_collection.find_one({"intent_id": intent_id}, {'_id': 0})
+        if mitigation_action is None:
+             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Action with id: {intent_id} was not found")
         print(mitigation_action)
-        actions = convert_id(mitigation_action)
-        return {"action detail": actions}
+        #actions = convert_id(mitigation_action)
+        return {"Action details": mitigation_action}
     except Exception as e:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"post with id: {id} was not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Action with id: {intent_id} was not found")
 
 
 @rtr_api.post("/actions", status_code=status.HTTP_201_CREATED)
@@ -119,10 +121,27 @@ def register_new_action(new_action: mitigation_action_model, token:OAuth2Passwor
             action_id = "123"
             action_definition = "Service Modification"
             service = "DNS"
+<<<<<<< Updated upstream
             simple_uploader(inserted_action_id, action_definition, service, complete_playbook)
             return {"New action unique id is":inserted_action_id}
+=======
+            simple_uploader(new_action.mitigation_host, inserted_action_id, action_definition, service, complete_playbook)
+            #return {"New action unique id is":inserted_action_id}
+            return "action created successfully"
+        
+        if new_action.command == 'delete':
+            
+                #_id = ObjectId(id)
+            deleted_mitigation_action = mitigation_actions_collection.find_one_and_delete({"intent_id": new_action.intent_id})
+            if deleted_mitigation_action == None:
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Action with id: {new_action.intent_id} was not found")
+            return "action deleted successfully"
+            
+        
+    
+>>>>>>> Stashed changes
     except Exception as e:
-        print(f"I could not store a new action to the database. Error {e}")
+        print(f"I could not store or delete a new action to the database. Error {e}")
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Document failed validation")
 
 
