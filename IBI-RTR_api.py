@@ -115,16 +115,16 @@ def register_new_action(new_action: mitigation_action_model, token:OAuth2Passwor
                 raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"An identical document was found")
                 
             inserted_action = mitigation_actions_collection.insert_one(new_action.dict())
-            inserted_action_id = str(inserted_action.inserted_id)
+            inserted_action_id = new_action.intent_id
             playbook = playbook_creator(new_action)
             complete_playbook = playbook.fill_in_ansible_playbook()
             action_id = "123"
             action_definition = "Service Modification"
             service = "DNS"
-<<<<<<< Updated upstream
-            simple_uploader(inserted_action_id, action_definition, service, complete_playbook)
-            return {"New action unique id is":inserted_action_id}
-=======
+
+            #simple_uploader(inserted_action_id, action_definition, service, complete_playbook)
+            #return {"New action unique id is":inserted_action_id}
+
             simple_uploader(new_action.mitigation_host, inserted_action_id, action_definition, service, complete_playbook)
             #return {"New action unique id is":inserted_action_id}
             return "action created successfully"
@@ -137,12 +137,9 @@ def register_new_action(new_action: mitigation_action_model, token:OAuth2Passwor
                 raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Action with id: {new_action.intent_id} was not found")
             return "action deleted successfully"
             
-        
-    
->>>>>>> Stashed changes
     except Exception as e:
-        print(f"I could not store or delete a new action to the database. Error {e}")
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Document failed validation")
+            print(f"I could not store or delete a new action to the database. Error {e}")
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Document failed validation")
 
 
 @rtr_api.delete("/actions/{id}", status_code=status.HTTP_204_NO_CONTENT)
