@@ -56,7 +56,7 @@ rtr_api.add_middleware(
 
 @rtr_api.get("/")
 def root():
-    return {"message": "Welcome to my API"}
+    return {"message": "Welcome to RTR"}
 
 @rtr_api.post('/register')
 def create_user(request:User):
