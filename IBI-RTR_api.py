@@ -26,18 +26,17 @@ try:
     cluster_name = os.environ.get("MONGODB_CLUSTERNAME")
     app_name = os.environ.get("MONGODB_APPNAME")
 
-    #connection_str = f"""mongodb+srv://{username}:{password}@{cluster_name}.mongodb.net/?retryWrites=true&w=majority&appName={app_name}"""
-    #connection_str = f"""mongodb://127.0.0.1:27017/?directConnection=true&serverSelectionTimeoutMS=2000&appName=mongosh+2.2.1"""
+
     connection_str = f"""mongodb://{db_username}:{db_password}@{db_name}:{db_port}/?authSource={db_auth}&directConnection={db_direct_conn}&serverSelectionTimeoutMS={db_timeout}"""
 
     client = MongoClient(connection_str)
 
-    #dbs = client.list_database_names()
+    
     mitigations_db = client.mitigation_actions
     users_db = client.users
     mitigation_actions_collection = mitigations_db.mitigation_actions
     users_collections = users_db.users
-    #collections = mitigations_db.list_collection_names()
+    
 except Exception as e:
     print(f"Something went wrong with the connection. Error {e}")
 
@@ -64,7 +63,6 @@ def create_user(request:User):
 	user_object = dict(request)
 	user_object["password"] = hashed_pass
 	user_id = users_collections.insert_one(user_object)
-	# print(user)
 	return {"res":"created"}
 
 @rtr_api.post('/login')
@@ -81,7 +79,7 @@ def login(request:OAuth2PasswordRequestForm = Depends()):
 @rtr_api.get("/actions")
 def get_all_mitigation_actions(token : OAuth2PasswordRequestForm = Depends(get_current_user)):
     stored_mitigation_actions = mitigation_actions_collection.find({}, {'_id': 0})
-    #print(stored_mitigation_actions)
+    
     actions = [action for action in stored_mitigation_actions]
     for action in stored_mitigation_actions:
         printer.pprint(action)
@@ -118,13 +116,13 @@ def register_new_action(new_action: mitigation_action_model, token:OAuth2Passwor
             inserted_action_id = new_action.intent_id
             playbook = playbook_creator(new_action)
             complete_playbook = playbook.fill_in_ansible_playbook()
-            action_definition = "Service Modification"
+            action_type = playbook.determine_action_type()
             service = "DNS"
 
             #simple_uploader(inserted_action_id, action_definition, service, complete_playbook)
             #return {"New action unique id is":inserted_action_id}
 
-            simple_uploader(new_action.mitigation_host, inserted_action_id, action_definition, service, complete_playbook)
+            simple_uploader(new_action.mitigation_host, inserted_action_id, action_type, service, complete_playbook)
             #return {"New action unique id is":inserted_action_id}
             return "action created successfully"
         

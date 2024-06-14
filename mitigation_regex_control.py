@@ -21,13 +21,14 @@ regex_patterns = {
 
 class playbook_creator:
     def __init__(self, action_from_IBI):
-        self.current_patterns = [('dns_rate_limiting.yaml', r'\b(reduce|decrease|requests|number|rate|limit|dns|server|service|\d{1,3}\/s)\b'),
-                            ('dns_service_disable.yaml', r'\b(disable|shut down|dns|server|service)\b'), 
+        self.current_patterns = [('dns_rate_limiting.yaml', r'\b(reduce|decrease|requests|number|rate|limit|dns|server|service|\d{1,3}\/s)\b', 'DNS_RATE_LIMIT'),
+                            ('dns_service_disable.yaml', r'\b(disable|shut down|dns|server|service)\b','DNS_SERV_DISABLE'), 
                             ('dns_service_handover', r'\b(hand over|dns|server|service)\b'),
-                            ('dns_firewall_spoofing_detection.yaml', r'\b(spoof|spoofed|destination|spoofing|packets|firewall|interface|block|stop|ip|ip range)\b'),
+                            ('dns_firewall_spoofing_detection.yaml', r'\b(spoof|spoofed|destination|spoofing|packets|firewall|interface|block|stop|ip|ip range)\b','DNS_FIREWALL_SPOOF'),
                             ('anycast_blackhole', r'\b(redirect|direct|dns|server|service|traffic|igress|blackhole)\b')]
         self.mitigation_action = action_from_IBI
         self.chosen_playbook = self.match_mitigation_action_with_playbook()
+        self.action_type = self.determine_action_type()
         print(self.chosen_playbook)
 
     
@@ -42,9 +43,14 @@ class playbook_creator:
 
         most_regex_matches = max(pattern_matches, key=lambda x: x[1])
 
-
+        
         return most_regex_matches[0]
     
+    def determine_action_type(self):
+        playbook_tuple = list(filter(lambda t: self.chosen_playbook in t, self.current_patterns))
+        action_type = playbook_tuple[0][2]
+        return action_type
+        
     
     def extract_variables_from_yaml(self,yaml_file):
         variables = []

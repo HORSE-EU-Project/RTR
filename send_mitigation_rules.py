@@ -1,11 +1,11 @@
 import requests
-
+import os
 
 
 def simple_uploader(target_ip, action_id, action_definition, service, playbook_yaml):
     #test_file = open("mitigation_rules.yaml", "rb")
 
-    
+    epem_url = os.getenv('EPEM_ENDPOINT')
     receiver_url = "http://httpbin.org/post"
     
     params = {

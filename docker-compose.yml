@@ -5,6 +5,9 @@ services:
     build: .
     ports:
       - "8000:8000"
+    environment:
+      EPEM_ENDPOINT: 10.208.211.11:5002
+      DNS_SERVER: 192.0.1.1
     volumes:
       - .:/app
     depends_on:
