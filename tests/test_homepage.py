@@ -10,6 +10,6 @@ def test_home_page():
     assert response.status_code == 200
     
     # Assert that the response contains the expected list of items
-    expected_items = {"message":"Welcome to my API"}
+    expected_items = {"message":"Welcome to RTR"}
     assert response.json() == expected_items
     print(response.json())
