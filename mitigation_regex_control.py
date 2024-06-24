@@ -70,23 +70,20 @@ class playbook_creator:
         variables = self.extract_variables_from_yaml(os.path.join("ansible_playbooks", self.chosen_playbook))
         playbook_variables_dict = {}
         
-       # print(f"hello {variables}")
         for variable in variables:
-            #print(f"Current variable {variable}")
             if variable == 'mitigation_host':
-                playbook_variables_dict['mitigation_host'] = self.mitigation_action.mitigation_host
+                playbook_variables_dict['mitigation_host'] = os.getenv(self.mitigation_action.mitigation_host)
                 continue
             
-            #print(f"Regex pattern {regex_patterns[variable]}")
             variable_value = re.findall(regex_patterns[variable], self.mitigation_action.action)
-            #print(f"Variable value {variable_value}")
+            
             playbook_variables_dict[variable] = variable_value[0]
-        #print("Variables: ",playbook_variables_dict)
-        # Load the template file
         
+        # Load the template file
         env = Environment(loader=FileSystemLoader('ansible_playbooks'))
 
         template = env.get_template(self.chosen_playbook)
+
         # Render the template with the variables
         rendered_template = template.render(playbook_variables_dict)
 
@@ -115,7 +112,7 @@ class playbook_creator:
 
 
 if __name__ == "__main__":
-    mitigation_action = mitigation_action_model(command='add', intent_type='mitigation', threat='ddos', attacked_host='11.0.0.1', mitigation_host='172.16.2.1', action='disable dns server', duration=4000,intent_id='ABC123')
+    mitigation_action = mitigation_action_model(command='add', intent_type='mitigation', threat='ddos', attacked_host='11.0.0.1', mitigation_host='DNS_SERVER', action='disable dns server', duration=4000,intent_id='ABC123')
     playbook = playbook_creator(mitigation_action)
     palybok_txt = playbook.fill_in_ansible_playbook()
     playbook.simple_uploader(playbook_text=palybok_txt)

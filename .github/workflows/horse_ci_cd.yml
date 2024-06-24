@@ -17,11 +17,13 @@ jobs:
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v1
     
-    - name: Build Docker images
-      run: docker-compose build
+    - name: Run deply script with speciifc variables
+      run: ./deploy.sh 10.208.211.11 5002 127.0.0.1 127.0.0.2
+    #- name: Build Docker images
+    #  run: docker-compose build
       
-    - name: Test Docker containers
-      run: docker-compose up -d
+    #- name: Test Docker containers
+    #  run: docker-compose up -d
       
     - name: Install dependencies
       run: |

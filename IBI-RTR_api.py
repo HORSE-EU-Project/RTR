@@ -55,6 +55,10 @@ rtr_api.add_middleware(
 
 @rtr_api.get("/")
 def root():
+    epem_ip = os.getenv("EPEM_ENDPOINT")
+    epem_port = os.getenv("EPEM_PORT")
+    dns_server = os.getenv("DNS_SERVER")
+    ntp_server = os.getenv("NTP_SERVER")
     return {"message": "Welcome to RTR"}
 
 @rtr_api.post('/register')
