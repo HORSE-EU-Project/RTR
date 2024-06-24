@@ -6,8 +6,10 @@ services:
     ports:
       - "8000:8000"
     environment:
-      EPEM_ENDPOINT: 10.208.211.11:5002
-      DNS_SERVER: 192.0.1.1
+      EPEM_ENDPOINT: ${EPEM_ENDPOINT}
+      EPEM_PORT: ${EPEM_PORT}
+      DNS_SERVER: ${DNS_SERVER}
+      NTP_SERVER: ${NTP_SERVER}
     volumes:
       - .:/app
     depends_on:
