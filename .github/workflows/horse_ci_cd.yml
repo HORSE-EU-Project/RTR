@@ -17,6 +17,9 @@ jobs:
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v1
     
+    - name: Ensure deploy.sh is executable
+      run: chmod +x deploy.sh
+      
     - name: Run deply script with speciifc variables
       run: ./deploy.sh 10.208.211.11 5002 127.0.0.1 127.0.0.2
     #- name: Build Docker images
