@@ -7,10 +7,11 @@ RTR is a software tool developed for the HORSE project. The purpose of the RTR i
 Downlad and run the application:
 - git clone [https://github.com/Eight-Bells-Ltd/Reliability-Trust-Resilience-RTR.git](https://github.com/Eight-Bells-Ltd/Reliability-Trust-Resilience-RTR.git)
 - cd Reliability-Trust-Resilience-RTR
-- git pull origin master
+<!-- - git pull origin master -->
+- chmod +x deploy.sh
 - ./deploy.sh <epem_ip> <epem_port> <dns_server_ip> <ntp_server>
-- docker compose build
-- docker compose up -d (-d: runs the application in the background)
+<!-- - docker compose build -->
+<!-- - docker compose up -d (-d: runs the application in the background)-->
 
 Upon deployment to a new testbed, nevariables distinct to the testbed need to be passed to the script. As of now the RTR needs to know 4 variables, namely ePEM's IP and port in order to forward request and the DNS and NTP address in order to receive requests from the IBI. This is done because informationlike IP, ports etc. can change from testbed to testbed, but if they are passed as environmental variables in each deployment, this assures a common language can be used for all HORSE components.
 ## Docker
