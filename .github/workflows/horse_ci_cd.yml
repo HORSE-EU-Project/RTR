@@ -21,7 +21,7 @@ jobs:
       run: chmod +x deploy.sh
       
     - name: Run deply script with speciifc variables
-      run: ./deploy.sh 10.208.211.11 5002 127.0.0.1 127.0.0.2
+      run: ./deploy.sh 10.208.211.11 5002 
     #- name: Build Docker images
     #  run: docker-compose build
       

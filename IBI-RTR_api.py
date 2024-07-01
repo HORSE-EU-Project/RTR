@@ -55,10 +55,7 @@ rtr_api.add_middleware(
 
 @rtr_api.get("/")
 def root():
-    epem_ip = os.getenv("EPEM_ENDPOINT")
-    epem_port = os.getenv("EPEM_PORT")
-    dns_server = os.getenv("DNS_SERVER")
-    ntp_server = os.getenv("NTP_SERVER")
+    
     return {"message": "Welcome to RTR"}
 
 @rtr_api.post('/register')
@@ -121,7 +118,7 @@ def register_new_action(new_action: mitigation_action_model, token:OAuth2Passwor
             playbook = playbook_creator(new_action)
             complete_playbook = playbook.fill_in_ansible_playbook()
             action_type = playbook.determine_action_type()
-            service = "DNS"
+            service = new_action.mitigation_host
 
             #simple_uploader(inserted_action_id, action_definition, service, complete_playbook)
             #return {"New action unique id is":inserted_action_id}

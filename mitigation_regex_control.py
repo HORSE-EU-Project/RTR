@@ -9,8 +9,11 @@ from jinja2 import Environment, FileSystemLoader
 #Find to what playbook the regular exression refers to
 
 expressions = ['port','ports']
+horse_topology_expressions = ['dns_c1', 'dns_c2', 'dns_c3', 'dns_c4', 'dns_c5', 'dns_c6', 'dns_c7', 'dns_c8', 'dns_c9', 'dns_c10', 'gnb', 'r1', 'r2', 'upf', 'dns_s', 'gateway', 'ausf', 'amf', 'smf', 'udm', 'nssf', 'udr', 'nrf', 'pcf']
+horse_topology_patterns = '|'.join(horse_topology_expressions)
 regex_patterns = {
-    'ipv4_and_subnet': r'\b(?:\d{1,3}\.){3}\d{1,3}(?:/\d{1,2})?\b',
+    #'ipv4_and_subnet': r'\b(?:\d{1,3}\.){3}\d{1,3}(?:/\d{1,2})?\b|\b({horse_topology_patterns})\b',#|\b({horse_topology_patterns})\b
+    'ipv4_and_subnet' : fr'\b(?:{horse_topology_patterns})\b', 
     'protocol': r'\b(tcp|udp)\b',
     'requests_per_sec': r'\b(\d{1,3}\/s)\b',
     'port': rf'\b(?:{"|".join(expressions)})\b\s*(\d+(?:,\d+)*)',
@@ -42,7 +45,7 @@ class playbook_creator:
 
 
         most_regex_matches = max(pattern_matches, key=lambda x: x[1])
-
+        print(most_regex_matches)
         
         return most_regex_matches[0]
     
@@ -69,15 +72,22 @@ class playbook_creator:
 
         variables = self.extract_variables_from_yaml(os.path.join("ansible_playbooks", self.chosen_playbook))
         playbook_variables_dict = {}
-        
+        print(variables)
         for variable in variables:
             if variable == 'mitigation_host':
                 playbook_variables_dict['mitigation_host'] = os.getenv(self.mitigation_action.mitigation_host)
+                print(playbook_variables_dict)
                 continue
             
-            variable_value = re.findall(regex_patterns[variable], self.mitigation_action.action)
             
-            playbook_variables_dict[variable] = variable_value[0]
+            variable_value = re.findall(regex_patterns[variable], self.mitigation_action.action)
+            print(variable_value)
+            if variable_value[0] in os.environ:
+                playbook_variable_value = os.getenv(variable_value[0])
+            else:
+                playbook_variable_value = variable_value[0]
+            #print(variable_value)
+            playbook_variables_dict[variable] = playbook_variable_value
         
         # Load the template file
         env = Environment(loader=FileSystemLoader('ansible_playbooks'))
@@ -112,7 +122,7 @@ class playbook_creator:
 
 
 if __name__ == "__main__":
-    mitigation_action = mitigation_action_model(command='add', intent_type='mitigation', threat='ddos', attacked_host='11.0.0.1', mitigation_host='DNS_SERVER', action='disable dns server', duration=4000,intent_id='ABC123')
+    mitigation_action = mitigation_action_model(command='add', intent_type='mitigation', threat='ddos', attacked_host='11.0.0.1', mitigation_host='udm', action='shut down dns_s', duration=4000,intent_id='ABC123')
     playbook = playbook_creator(mitigation_action)
     palybok_txt = playbook.fill_in_ansible_playbook()
     playbook.simple_uploader(playbook_text=palybok_txt)

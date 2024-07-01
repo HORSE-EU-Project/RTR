@@ -8,8 +8,6 @@ services:
     environment:
       EPEM_ENDPOINT: ${EPEM_ENDPOINT}
       EPEM_PORT: ${EPEM_PORT}
-      DNS_SERVER: ${DNS_SERVER}
-      NTP_SERVER: ${NTP_SERVER}
     volumes:
       - .:/app
     depends_on:
