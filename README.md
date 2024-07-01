@@ -9,7 +9,7 @@ Downlad and run the application:
 - cd Reliability-Trust-Resilience-RTR
 <!-- - git pull origin master -->
 - chmod +x deploy.sh
-- ./deploy.sh <epem_ip> <epem_port> <dns_server_ip> <ntp_server>
+- ./deploy.sh <epem_ip> <epem_port> 
 <!-- - docker compose build -->
 <!-- - docker compose up -d (-d: runs the application in the background)-->
 
