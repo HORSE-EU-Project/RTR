@@ -16,7 +16,7 @@ services:
       - rtr-network
 
   mongodb:
-    image: mongo:latest
+    image: mongo:4.4
     container_name: mongodb
     restart: always
     ports:

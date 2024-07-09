@@ -6,8 +6,8 @@ def simple_uploader(target_ip, action_id, action_definition, service, playbook_y
     #test_file = open("mitigation_rules.yaml", "rb")
 
     
-    epem_receiver = f"http://{os.getenv('EPEM_ENDPOINT')}:{os.getenv('EPEM_PORT')}/rtr_request"
-    #receiver_url = "http://httpbin.org/post"
+    #receiver_url = f"http://{os.getenv('EPEM_ENDPOINT')}:{os.getenv('EPEM_PORT')}/rtr_request"
+    receiver_url = "http://httpbin.org/post"
     
     params = {
         "target_ip": target_ip,
@@ -25,7 +25,7 @@ def simple_uploader(target_ip, action_id, action_definition, service, playbook_y
 
     #data = playbook_yaml
     playbook_content = playbook_yaml
-    test_response = requests.post(epem_receiver, params=params, headers = headers, data = playbook_content)
+    test_response = requests.post(receiver_url, params=params, headers = headers, data = playbook_content)
 
     if test_response.ok:
         print("Upload completed successfully!")
