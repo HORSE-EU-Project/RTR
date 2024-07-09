@@ -6,8 +6,8 @@ def simple_uploader(target_ip, action_id, action_definition, service, playbook_y
     #test_file = open("mitigation_rules.yaml", "rb")
 
     
-    #receiver_url = f"http://{os.getenv('EPEM_ENDPOINT')}:{os.getenv('EPEM_PORT')}/rtr_request"
-    receiver_url = "http://httpbin.org/post"
+    receiver_url = f"http://{os.getenv('EPEM_ENDPOINT')}:{os.getenv('EPEM_PORT')}/rtr_request"
+    #receiver_url = "http://httpbin.org/post"
     
     params = {
         "target_ip": target_ip,
