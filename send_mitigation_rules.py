@@ -12,7 +12,7 @@ def simple_uploader(target_ip, action_id, action_definition, service, playbook_y
     
     params = {
         "target_ip": target_ip,
-        "target_port": None,
+        "target_port": str(58),
         "service": service,
         "actionType": action_definition,
         "actionID": action_id,
@@ -21,7 +21,7 @@ def simple_uploader(target_ip, action_id, action_definition, service, playbook_y
 
     headers = {
         "accept": "application/json",
-        "Content-Type": "text/yaml"
+        "Content-Type": "application/yaml"
     }
     
 
