@@ -20,7 +20,7 @@ def simple_uploader(target_ip, action_id, action_definition, service, playbook_y
     }
 
     headers = {
-        "accept": "application/json",
+        #"accept": "application/json",
         "Content-Type": "application/yaml"
     }
     
