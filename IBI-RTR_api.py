@@ -123,7 +123,11 @@ def register_new_action(new_action: mitigation_action_model, token:OAuth2Passwor
             #simple_uploader(inserted_action_id, action_definition, service, complete_playbook)
             #return {"New action unique id is":inserted_action_id}
 
-            simple_uploader(new_action.mitigation_host, inserted_action_id, action_type, service, complete_playbook)
+            status_code = simple_uploader(new_action.mitigation_host, inserted_action_id, action_type, service, complete_playbook)
+            if status_code == 200 or status_code == 201:
+                 print("Ansible sent successfully")
+            else:
+                 raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Ansible was not sent successfully")
             mitigation_actions_collection.insert_one(new_action.dict())
             #return {"New action unique id is":inserted_action_id}
             return "action created successfully"

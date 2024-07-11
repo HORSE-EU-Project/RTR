@@ -7,6 +7,7 @@ def simple_uploader(target_ip, action_id, action_definition, service, playbook_y
 
     
     receiver_url = f"http://{os.getenv('EPEM_ENDPOINT')}:{os.getenv('EPEM_PORT')}/rtr_request"
+    print(f"Receiver url: {receiver_url}")
     #receiver_url = "http://httpbin.org/post"
     
     params = {
@@ -30,9 +31,11 @@ def simple_uploader(target_ip, action_id, action_definition, service, playbook_y
     if test_response.ok:
         print("Upload completed successfully!")
         print(f"Request body {test_response.text}")
+        
     else:
         print(f"Something went wrong! Status code: {test_response.status_code}")
 
+    return(test_response.status_code)
 
 if __name__ == '__main__':
     action_id = "123"
