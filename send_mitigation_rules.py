@@ -12,7 +12,7 @@ def simple_uploader(target_ip, action_id, action_definition, service, playbook_y
     
     params = {
         "target_ip": target_ip,
-        "port": None,
+        "target_port": None,
         "service": service,
         "actionType": action_definition,
         "actionID": action_id
