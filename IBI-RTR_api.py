@@ -124,7 +124,7 @@ def register_new_action(new_action: mitigation_action_model, token:OAuth2Passwor
             #return {"New action unique id is":inserted_action_id}
 
             status_code = simple_uploader(new_action.mitigation_host, inserted_action_id, action_type, service, complete_playbook)
-            if status_code == 200 or status_code == 201:
+            if status_code == 200 or status_code == 202:
                  print("Ansible sent successfully")
             else:
                  raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Ansible was not sent successfully")
