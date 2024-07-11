@@ -113,7 +113,7 @@ def register_new_action(new_action: mitigation_action_model, token:OAuth2Passwor
             if existing_document:
                 raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"An identical document was found")
                 
-            inserted_action = mitigation_actions_collection.insert_one(new_action.dict())
+            #inserted_action = mitigation_actions_collection.insert_one(new_action.dict())
             inserted_action_id = new_action.intent_id
             playbook = playbook_creator(new_action)
             complete_playbook = playbook.fill_in_ansible_playbook()
@@ -124,6 +124,7 @@ def register_new_action(new_action: mitigation_action_model, token:OAuth2Passwor
             #return {"New action unique id is":inserted_action_id}
 
             simple_uploader(new_action.mitigation_host, inserted_action_id, action_type, service, complete_playbook)
+            mitigation_actions_collection.insert_one(new_action.dict())
             #return {"New action unique id is":inserted_action_id}
             return "action created successfully"
         
