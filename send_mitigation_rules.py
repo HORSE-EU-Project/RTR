@@ -12,11 +12,10 @@ def simple_uploader(target_ip, action_id, action_definition, service, playbook_y
     
     params = {
         "target_ip": target_ip,
-        "target_port": str(58),
+        "target_port": "8080",
         "service": service,
         "actionType": action_definition,
-        "actionID": action_id,
-        "payload": playbook_yaml
+        "actionID": action_id
     }
 
     headers = {
@@ -27,7 +26,7 @@ def simple_uploader(target_ip, action_id, action_definition, service, playbook_y
 
     #data = playbook_yaml
     playbook_content = playbook_yaml
-    test_response = requests.post(receiver_url, params=params, headers = headers)
+    test_response = requests.post(receiver_url, params=params, headers = headers, data=playbook_content)
 
     if test_response.ok:
         print("Upload completed successfully!")
