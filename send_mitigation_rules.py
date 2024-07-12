@@ -19,7 +19,45 @@ def simple_uploader(target_ip, action_id, action_definition, service, playbook_y
     }
 
     headers = {
-        #"accept": "application/json",
+        "accept": "application/json",
+        "Content-Type": "application/yaml"
+    }
+    
+
+    #data = playbook_yaml
+    playbook_content = playbook_yaml
+    test_response = requests.post(receiver_url, params=params, headers = headers, data=playbook_content)
+
+    if test_response.ok:
+        print("Upload completed successfully!")
+        print(f"Request body {test_response.text}")
+        
+    else:
+        print(f"Something went wrong! Status code: {test_response.status_code}")
+
+    return(test_response.status_code)
+
+
+def simple_uploader_workaround(target_ip, action_id, action_definition, service, playbook_yaml):
+    #test_file = open("mitigation_rules.yaml", "rb")
+
+    
+    receiver_url = f"http://{os.getenv('EPEM_ENDPOINT')}:{os.getenv('EPEM_PORT')}/v2/horse/rtr_request_workaround"
+    print(f"Receiver url: {receiver_url}")
+    #receiver_url = "http://httpbin.org/post"
+    
+    params = {
+        "target": target_ip,
+        "action_type": action_definition,
+        "username": "ubuntu",
+        "password": "testpwd",
+        "forward_to_doc": True,
+        "service": service,
+        "actionID": action_id
+    }
+
+    headers = {
+        "accept": "application/json",
         "Content-Type": "application/yaml"
     }
     
