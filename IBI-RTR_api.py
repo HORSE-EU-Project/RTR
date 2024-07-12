@@ -12,7 +12,7 @@ from oauth import get_current_user
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.middleware.cors import CORSMiddleware
 from jwttoken import create_access_token
-from send_mitigation_rules import simple_uploader
+from send_mitigation_rules import simple_uploader, simple_uploader_workaround
 
 try:
     load_dotenv(find_dotenv())
@@ -123,7 +123,7 @@ def register_new_action(new_action: mitigation_action_model, token:OAuth2Passwor
             #simple_uploader(inserted_action_id, action_definition, service, complete_playbook)
             #return {"New action unique id is":inserted_action_id}
 
-            status_code = simple_uploader(new_action.mitigation_host, inserted_action_id, action_type, service, complete_playbook)
+            status_code = simple_uploader_workaround(new_action.mitigation_host, inserted_action_id, action_type, service, complete_playbook)
             if status_code == 200 or status_code == 202:
                  print("Ansible sent successfully")
             else:
