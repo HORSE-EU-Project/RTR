@@ -1,5 +1,6 @@
 import requests
 import os
+from requests_toolbelt.utils import dump
 
 
 def simple_uploader(target_ip, action_id, action_definition, service, playbook_yaml):
@@ -7,8 +8,9 @@ def simple_uploader(target_ip, action_id, action_definition, service, playbook_y
 
     
     receiver_url = f"http://{os.getenv('EPEM_ENDPOINT')}:{os.getenv('EPEM_PORT')}/v2/horse/rtr_request"
+    
     print(f"Receiver url: {receiver_url}")
-    #receiver_url = "http://httpbin.org/post"
+    
     
     params = {
         "target_ip": target_ip,
@@ -27,7 +29,9 @@ def simple_uploader(target_ip, action_id, action_definition, service, playbook_y
     #data = playbook_yaml
     playbook_content = playbook_yaml
     test_response = requests.post(receiver_url, params=params, headers = headers, data=playbook_content)
-
+    request_data = dump.dump_all(test_response.request)
+    print(f"Request body: {request_data.decode('utf-8')}")
+    print(f"Request body {test_response.text}")
     if test_response.ok:
         print("Upload completed successfully!")
         print(f"Request body {test_response.text}")
@@ -81,5 +85,5 @@ if __name__ == '__main__':
     service = "DNS"
     playbook_yaml = open("ansible_playbooks/dns_rate_limiting.yaml", "rb")
     playbook_content = playbook_yaml.read()
-    #print(content)
-    simple_uploader(action_id, action_definition, service, playbook_content)
+    #print(playbook_content)
+    simple_uploader("127.0.0.1",action_id, action_definition, service, playbook_content)
