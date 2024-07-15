@@ -60,7 +60,7 @@ def simple_uploader_workaround(target_ip, action_id, action_definition, service,
 
     headers = {
         "accept": "application/json",
-        "Content-Type": "application/yaml"
+        "Content-Type": "text/yaml"
     }
     
 
