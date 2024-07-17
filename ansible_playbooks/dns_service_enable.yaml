@@ -1,0 +1,23 @@
+---
+- name: Enable DNS service
+  hosts: {{mitigation_host}}
+  become: true
+  tasks:
+    - name: Start and enable DNS service on systemd-based systems
+      systemd:
+        name: dns_service_name
+        state: started
+        enabled: yes
+      when: ansible_os_family == 'RedHat' or ansible_os_family == 'Debian'
+
+    - name: Start and enable DNS service on SysV init systems
+      service:
+        name: dns_service_name
+        state: started
+        enabled: yes
+      when: ansible_os_family == 'Suse' or ansible_os_family == 'FreeBSD'
+
+  handlers:
+    - name: Print message
+      debug:
+        msg: "DNS service is started and enabled"
