@@ -26,6 +26,7 @@ class playbook_creator:
     def __init__(self, action_from_IBI):
         self.current_patterns = [('dns_rate_limiting.yaml', r'\b(reduce|decrease|requests|number|rate|limit|dns|server|service|\d{1,3}\/s)\b', 'DNS_RATE_LIMIT'),
                             ('dns_service_disable.yaml', r'\b(disable|shut down|dns|server|service)\b','DNS_SERV_DISABLE'), 
+                            ('dns_service_enable.yaml', r'\b(enable|dns|server|service)\b','DNS_SERV_ENABLE'),
                             ('dns_service_handover', r'\b(hand over|dns|server|service)\b'),
                             ('dns_firewall_spoofing_detection.yaml', r'\b(spoof|spoofed|destination|spoofing|packets|firewall|interface|block|stop|ip|ip range)\b','DNS_FIREWALL_SPOOF'),
                             ('anycast_blackhole', r'\b(redirect|direct|dns|server|service|traffic|igress|blackhole)\b')]
@@ -42,6 +43,7 @@ class playbook_creator:
         for pattern in self.current_patterns:
             matches = re.findall(pattern[1], high_level_mitigation_action)
             pattern_matches.append((pattern[0],len(matches)))
+            print(pattern_matches)
 
 
         most_regex_matches = max(pattern_matches, key=lambda x: x[1])
@@ -122,7 +124,7 @@ class playbook_creator:
 
 
 if __name__ == "__main__":
-    mitigation_action = mitigation_action_model(command='add', intent_type='mitigation', threat='ddos', attacked_host='11.0.0.1', mitigation_host='udm', action='shut down dns_s', duration=4000,intent_id='ABC123')
+    mitigation_action = mitigation_action_model(command='add', intent_type='mitigation', threat='ddos', attacked_host='11.0.0.1', mitigation_host='udm', action='enable dns server', duration=4000,intent_id='ABC123')
     playbook = playbook_creator(mitigation_action)
     palybok_txt = playbook.fill_in_ansible_playbook()
     playbook.simple_uploader(playbook_text=palybok_txt)
