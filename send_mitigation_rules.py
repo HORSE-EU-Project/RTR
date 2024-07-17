@@ -53,7 +53,7 @@ def simple_uploader_workaround(target_ip, action_id, action_definition, service,
         "action_type": action_definition,
         "username": "ubuntu",
         "password": "testpwd",
-        "forward_to_doc": True,
+        "forward_to_doc": False,
         "service": service,
         "actionID": action_id
     }
