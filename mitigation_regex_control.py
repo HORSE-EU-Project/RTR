@@ -9,7 +9,7 @@ from jinja2 import Environment, FileSystemLoader
 #Find to what playbook the regular exression refers to
 
 expressions = ['port','ports']
-horse_topology_expressions = ['dns_c1', 'dns_c2', 'dns_c3', 'dns_c4', 'dns_c5', 'dns_c6', 'dns_c7', 'dns_c8', 'dns_c9', 'dns_c10', 'gnb', 'r1', 'r2', 'upf', 'dns_s', 'gateway', 'ausf', 'amf', 'smf', 'udm', 'nssf', 'udr', 'nrf', 'pcf']
+horse_topology_expressions = ['dns-c1', 'dns-c2', 'dns-c3', 'dns-c4', 'dns-c5', 'dns-c6', 'dns-c7', 'dns-c8', 'dns-c9', 'dns-c10', 'gnb', 'ceos1', 'ceos2', 'upf', 'dns-s', 'gateway', 'ausf', 'amf', 'smf', 'udm', 'nssf', 'udr', 'nrf', 'pcf']
 horse_topology_patterns = '|'.join(horse_topology_expressions)
 regex_patterns = {
     #'ipv4_and_subnet': r'\b(?:\d{1,3}\.){3}\d{1,3}(?:/\d{1,2})?\b|\b({horse_topology_patterns})\b',#|\b({horse_topology_patterns})\b
