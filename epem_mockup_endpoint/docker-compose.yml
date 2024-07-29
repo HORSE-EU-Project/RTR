@@ -1,0 +1,15 @@
+version: '3'
+
+services:
+  epem-mockup:
+    build: .
+    ports:
+      - "8086:8086"
+    volumes:
+      - .:/app
+    networks:
+      - fastapi-mongodb_rtr-network
+
+networks:
+  fastapi-mongodb_rtr-network:
+    external: true

@@ -20,8 +20,15 @@ jobs:
     - name: Ensure deploy.sh is executable
       run: chmod +x deploy.sh
       
-    - name: Run deply script with speciifc variables
-      run: ./deploy.sh 10.208.211.11 5002 
+    - name: Run deploy script with speciifc variables
+      run: ./deploy.sh app-epem-mockup-1 8086
+
+    - name: Run mockup epem
+      run: |
+            cd epem_mockup_endpoint
+            docker-compose build
+            docker-compose up -d
+            cd ..
     #- name: Build Docker images
     #  run: docker-compose build
       
