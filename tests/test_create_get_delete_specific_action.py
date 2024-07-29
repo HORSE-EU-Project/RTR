@@ -41,8 +41,8 @@ def test_login_and_get_all_actions():
         "intent_type": "mitigation",
         "threat": "ddos",
         "attacked_host": "193.2.19.0",
-        "mitigation_host": "dns_s",
-        "action": "Block potentially spoofed packets with destination dns_s in wlan1",
+        "mitigation_host": "dns-s",
+        "action": "Reduce the number of requests to 15/s for port 53, protocol tcp",
         "duration": 8400,
         "intent_id": "aB3"
     }
@@ -90,8 +90,8 @@ def test_login_and_get_all_actions():
         "intent_type": "mitigation",
         "threat": "ddos",
         "attacked_host": "193.2.19.0",
-        "mitigation_host": "dns_s",
-        "action": "Block potentially spoofed packets with destination dns_s in wlan1",
+        "mitigation_host": "dns-s",
+        "action": "Reduce the number of requests to 15/s for port 53, protocol tcp",
         "duration": 8400,
         "intent_id": "aB3"
     }
