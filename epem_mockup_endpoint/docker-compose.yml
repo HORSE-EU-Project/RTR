@@ -8,8 +8,8 @@ services:
     volumes:
       - .:/app
     networks:
-      - fastapi-mongodb_rtr-network
+      - rtr_rtr-network
 
 networks:
-  fastapi-mongodb_rtr-network:
+  rtr_rtr-network:
     external: true
