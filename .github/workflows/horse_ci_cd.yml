@@ -21,7 +21,7 @@ jobs:
       run: chmod +x deploy.sh
       
     - name: Run deploy script with speciifc variables
-      run: ./deploy.sh app-epem-mockup-1 8086
+      run: ./deploy.sh epem_mockup_endpoint_epem-mockup_1 8086
 
     - name: Run mockup epem
       run: |
