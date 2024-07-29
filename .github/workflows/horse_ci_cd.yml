@@ -55,5 +55,10 @@ jobs:
     - name: Create a new action
       run: pytest tests/test_create_get_delete_specific_action.py
       
+    - name: Stop epem epem_mockup_endpoint
+      run: |
+            cd epem_mockup_endpoint
+            docker-compose down
+            cd ..
     - name: Stop Docker containers
       run: docker-compose down
