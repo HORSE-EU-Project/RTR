@@ -1,6 +1,6 @@
 from dotenv import load_dotenv, find_dotenv
 from fastapi import FastAPI,Body, Depends, status, HTTPException
-from mitigation_action_class import mitigation_action_model, User
+from mitigation_action_class import mitigation_action_model, UpdateActionStatusRequest, User
 from mitigation_regex_control import playbook_creator
 from hashing import Hash
 from oauth import get_current_user
