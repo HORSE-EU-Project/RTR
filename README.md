@@ -7,13 +7,10 @@ RTR is a software tool developed for the HORSE project. The purpose of the RTR i
 Downlad and run the application:
 - git clone [https://github.com/Eight-Bells-Ltd/Reliability-Trust-Resilience-RTR.git](https://github.com/Eight-Bells-Ltd/Reliability-Trust-Resilience-RTR.git)
 - cd Reliability-Trust-Resilience-RTR
-<!-- - git pull origin master -->
-- chmod +x deploy.sh
-- ./deploy.sh <epem_ip> <epem_port> 
-<!-- - docker compose build -->
-<!-- - docker compose up -d (-d: runs the application in the background)-->
+- git pull origin master
+- docker compose build
+- docker compose up -d (-d: runs the application in the background)
 
-Upon deployment to a new testbed, nevariables distinct to the testbed need to be passed to the script. As of now the RTR needs to know 4 variables, namely ePEM's IP and port in order to forward request and the DNS and NTP address in order to receive requests from the IBI. This is done because informationlike IP, ports etc. can change from testbed to testbed, but if they are passed as environmental variables in each deployment, this assures a common language can be used for all HORSE components.
 ## Docker
 This Dockerfile sets up an environment for running [rtr-api](https://github.com/Eight-Bells-Ltd/Reliability-Trust-Resilience-RTR/blob/main/IBI-RTR_api.py). It begins by specifying the base image as Python 3.11.5, establishing the working directory within the container as /app. Dependencies listed in requirements.txt are then installed using pip, ensuring the necessary packages are available. The FastAPI application code is copied into the container's working directory. Port 8000 is exposed to allow external access to the FastAPI application. Finally, the Dockerfile specifies the command to run the application, launching it with Uvicorn and binding to host 0.0.0.0 and port 8000. This Dockerfile encapsulates all the steps needed to build a Docker image capable of running the FastAPI application within a container, providing a consistent and reproducible environment for deployment.
 
