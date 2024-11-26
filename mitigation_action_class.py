@@ -2,7 +2,7 @@ from pydantic import BaseModel, Field
 from typing import Optional, Literal
 
 
-#could be improved by using Enum and restricting the values
+# Enhanced mitigation_action_model
 class mitigation_action_model(BaseModel):
     command: str = Field(..., example="add")  # Example for Swagger UI
     intent_type: str = Field(..., example="mitigation")
@@ -12,6 +12,8 @@ class mitigation_action_model(BaseModel):
     action: str = Field(..., example="Block potentially spoofed packets with destination 192.68.0.0/24 in interface wlan")
     duration: int = Field(..., example=7000)
     intent_id: Optional[str] = Field(None, example="ABC124")
+    status: str = Field(default="pending", example="completed", description="Current status of the mitigation action")
+    info: str = Field(default="to be enforced", example="Action successfully executed", description="Additional information about the action status")
 
     class Config:
         schema_extra = {
@@ -27,11 +29,14 @@ class mitigation_action_model(BaseModel):
                         "mitigation_host": "172.16.2.1",
                         "action": "Block potentially spoofed packets with destination 192.68.0.0/24 in interface wlan",
                         "duration": 7000,
-                        "intent_id": "ABC124"
+                        "intent_id": "ABC124",
+                        "status": "pending",
+                        "info": "to be enforced"
                     }
                 }
             }
         }
+
 
 class UpdateActionStatusRequest(BaseModel):
     action_id: str = Field(..., example="ABC123")
