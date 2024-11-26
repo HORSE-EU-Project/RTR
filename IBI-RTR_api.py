@@ -150,4 +150,10 @@ def update_action_status(status_update: UpdateActionStatusRequest):
     mitigation_actions[action_id]["status"] = action_status
     mitigation_actions[action_id]["info"] = additional_info
 
+    # Send notification to ePEM for successful satus update
+    # To implement the sending of status 500 to ePEM
+    
+    # Send mitigation action status update to IBI
+    # To implement the sending of status update to IBI
+    
     return {"message": "Action status updated successfully"}
