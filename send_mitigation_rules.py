@@ -1,20 +1,13 @@
-import requests
 import os
-
-
+import requests
 
 def simple_uploader(target_ip, action_id, action_definition, service, playbook_yaml):
-    #test_file = open("mitigation_rules.yaml", "rb")
+    epem_url = os.getenv('EPEM_ENDPOINT')  # Ensure this is set to ePEM's actual endpoint
+    update_status_url = "http://your-fastapi-server/update_action_status"  # Replace with actual FastAPI server URL
 
-    
-    receiver_url = f"http://{os.getenv('EPEM_ENDPOINT')}:{os.getenv('EPEM_PORT')}/v2/horse/rtr_request"
-    
-    print(f"Receiver url: {receiver_url}")
-    
-    
     params = {
         "target_ip": target_ip,
-        "target_port": "8080",
+        "port": None,
         "service": service,
         "actionType": action_definition,
         "actionID": action_id
@@ -24,66 +17,38 @@ def simple_uploader(target_ip, action_id, action_definition, service, playbook_y
         "accept": "application/json",
         "Content-Type": "application/yaml"
     }
-    
 
-    #data = playbook_yaml
+    # Send request to ePEM component
     playbook_content = playbook_yaml
-    test_response = requests.post(receiver_url, params=params, headers = headers, data=playbook_content)
-    
-    if test_response.ok:
-        print("Upload completed successfully!")
-        print(f"Request body {test_response.text}")
-        
-    else:
-        print(f"Something went wrong! Status code: {test_response.status_code}")
+    try:
+        response = requests.post(epem_url, params=params, headers=headers, data=playbook_content)
 
-    return(test_response.status_code)
+        if response.ok:
+            print("Upload completed successfully!")
+            print(f"Request body: {response.text}")
+            # Notify FastAPI that action is now 'completed'
+            update_status_payload = {
+                "action_id": action_id,
+                "status": "completed",
+                "info": "Action processed by ePEM successfully"
+            }
+        else:
+            print(f"Upload failed! Status code: {response.status_code}")
+            update_status_payload = {
+                "action_id": action_id,
+                "status": "error",
+                "info": f"Upload failed with status code: {response.status_code}, response: {response.text}"
+            }
+        # Send status update to FastAPI server
+        requests.post(update_status_url, json=update_status_payload)
 
-
-def simple_uploader_workaround(target_ip, action_id, action_definition, service, playbook_yaml):
-    #test_file = open("mitigation_rules.yaml", "rb")
-
-    
-    receiver_url = f"http://{os.getenv('EPEM_ENDPOINT')}:{os.getenv('EPEM_PORT')}/v2/horse/rtr_request_workaround"
-    print(f"Receiver url: {receiver_url}")
-    #receiver_url = "http://httpbin.org/post"
-    
-    params = {
-        "target": target_ip,
-        "action_type": action_definition,
-        "username": "ubuntu",
-        "password": "testpwd",
-        "forward_to_doc": True,
-        "service": service,
-        "actionID": action_id
-    }
-
-    headers = {
-        "accept": "application/json",
-        "Content-Type": "application/yaml"
-    }
-    
-
-    #data = playbook_yaml
-    playbook_content = playbook_yaml
-    test_response = requests.post(receiver_url, params=params, headers = headers, data=playbook_content)
-    print("Headers:", headers)
-    print("Params:", params)
-    print(test_response)
-    if test_response.ok:
-        print("Upload completed successfully!")
-        print(f"Request body {test_response.text}")
-        
-    else:
-        print(f"Something went wrong! Status code: {test_response.status_code}")
-
-    return(test_response.status_code)
-
-if __name__ == '__main__':
-    action_id = "123"
-    action_definition = "Service Modification"
-    service = "DNS"
-    playbook_yaml = open("ansible_playbooks/dns_rate_limiting.yaml", "rb")
-    playbook_content = playbook_yaml.read()
-    #print(playbook_content)
-    simple_uploader("127.0.0.1",action_id, action_definition, service, playbook_content)
+    except Exception as e:
+        print(f"Error in simple_uploader: {e}")
+        # Update status to error in case of exception
+        update_status_payload = {
+            "action_id": action_id,
+            "status": "error",
+            "info": f"Exception occurred: {str(e)}"
+        }
+        # Send status update to FastAPI server
+        requests.post(update_status_url, json=update_status_payload)
