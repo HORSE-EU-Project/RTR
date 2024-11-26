@@ -34,7 +34,7 @@ class mitigation_action_model(BaseModel):
         }
 
 class UpdateActionStatusRequest(BaseModel):
-    action_id: str = Field(..., example="123e4567-e89b-12d3-a456-426614174000")
+    action_id: str = Field(..., example="ABC123")
     status: str = Field(..., example="completed")
     info: str = Field(..., example="Action successfully executed")
 
@@ -45,7 +45,7 @@ class UpdateActionStatusRequest(BaseModel):
                     "summary": "Mark action as completed",
                     "description": "This marks the action as completed with additional info.",
                     "value": {
-                        "action_id": "123e4567-e89b-12d3-a456-426614174000",
+                        "action_id": "ABC123",
                         "status": "completed",
                         "info": "Action successfully executed"
                     }
@@ -54,7 +54,7 @@ class UpdateActionStatusRequest(BaseModel):
                     "summary": "Mark action as error",
                     "description": "This marks the action as failed due to an error.",
                     "value": {
-                        "action_id": "123e4567-e89b-12d3-a456-426614174000",
+                        "action_id": "ABC123",
                         "status": "error",
                         "info": "Execution failed due to timeout"
                     }
