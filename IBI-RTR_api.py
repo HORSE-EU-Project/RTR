@@ -87,20 +87,21 @@ def register_new_action(
     new_action: mitigation_action_model,
     token: str = Depends(lambda: "dummy_token")  # Replace with oauth2_scheme
     ):
-    # Dummy token verification (replace with get_current_user in actual implementation)
     current_user = {"username": "dummy_user"}  # Simulate user
 
-    action_id = new_action.intent_id or str(uuid.uuid4())
+    # Use intent_id directly since action_id is removed
+    intent_id = new_action.intent_id
+
     if new_action.command == "add":
-        if action_id in mitigation_actions:
+        if intent_id in mitigation_actions:
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
                 detail="An identical action already exists",
             )
 
         # Store action in memory with initial status
-        mitigation_actions[action_id] = {
-            "action_id": action_id,
+        mitigation_actions[intent_id] = {
+            "intent_id": intent_id,
             "command": new_action.command,
             "intent_type": new_action.intent_type,
             "threat": new_action.threat,
@@ -112,48 +113,21 @@ def register_new_action(
             "info": "Action created, pending execution",
         }
 
-        # Simulating playbook creation and sending to ePEM
-        try:
-            # playbook = playbook_creator(new_action)
-            # complete_playbook = playbook.fill_in_ansible_playbook()
-            # action_type = playbook.determine_action_type()
-            # service = "DNS"
-            # simple_uploader(new_action.mitigation_host, action_id, action_type, service, complete_playbook)
-            return {"message": "Action created and sent to ePEM", "action_id": action_id}
-        except Exception as e:
-            mitigation_actions[action_id]["status"] = "error"
-            mitigation_actions[action_id]["info"] = f"Action failed to send to ePEM: {str(e)}"
-            return {"message": "Action created but failed to send to ePEM", "action_id": action_id}
-
-    elif new_action.command == "delete":
-        if action_id not in mitigation_actions:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Action not found",
-            )
-        del mitigation_actions[action_id]
-        return {"message": "Action deleted successfully"}
-
+        return {"message": "Action created", "intent_id": intent_id}
 
 @rtr_api.post("/update_action_status", status_code=status.HTTP_200_OK)
 def update_action_status(status_update: UpdateActionStatusRequest):
-    action_id = status_update.action_id
+    intent_id = status_update.intent_id  # Changed to use intent_id
     action_status = status_update.status
     additional_info = status_update.info
 
-    if not action_id or not action_status:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Missing action_id or status")
+    if not intent_id or not action_status:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Missing intent_id or status")
 
-    if action_id not in mitigation_actions:
+    if intent_id not in mitigation_actions:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Action not found")
 
-    mitigation_actions[action_id]["status"] = action_status
-    mitigation_actions[action_id]["info"] = additional_info
+    mitigation_actions[intent_id]["status"] = action_status
+    mitigation_actions[intent_id]["info"] = additional_info
 
-    # Send notification to ePEM for successful satus update
-    # To implement the sending of status 500 to ePEM
-    
-    # Send mitigation action status update to IBI
-    # To implement the sending of status update to IBI
-    
     return {"message": "Action status updated successfully"}
