@@ -35,6 +35,7 @@ The application's functionality are fostered by fastAPI. The fastAPI implements 
 - get actions (GET): Requests all of the available actions currently stored inside the API. (OAuth 2.0)
 - get specific action (GET): Requests a specific action based on the action's unique ID. (OAuth 2.0)
 - delete action (POST): Deletes a specific action based on the action's unique ID. (OAuth 2.0)
+- update action (POST): Updates an action's status based on the actioin's unique ID. (OAuth 2.0)
 
 All of the above are protected with OAuth 2.0 authentication.
 
@@ -57,12 +58,15 @@ The RTR was developed for the purposes of HORSE and it should receive input from
 {
     "command": "add" or "delete", 
     "intent_type": "mitigation" or "prevention",
-    "threat": "ddos", "dos" or "api_vul",
-    "attacked_host": "120.2.191.7",
-    "mitigation_host": "194.159.13.181",
-    "action": "Reduce the number of request to the dns server to a 45/s for port 55, protocol udp",
-    "duration": 4000,
-    "intent_id": "ABC123"
+    "threat": e.g. "ddos"
+    "attacked_host": e.g. "10.0.0.1",
+    "mitigation_host": e.g. "172.16.2.1",
+    "action": e.g. "Block potentially spoofed packets with destination 192.68.0.0/24 in interface wlan0",
+    "duration": e.g. 7000,
+    "intent_id": e.g. "ABC123",
+    "command": e.g. "add",
+    "status": e.g. "pending",
+    "info": e.g. "Blocking spoofed packets in the specified IP range on wlan0 interface."
 }
 
 We check inside the App if the JSON they provide us with meets the criteria of the schema above. Another check is done intrenally inside the database to confirm the validity of the JSON. This 2nd check is performed by the validation schema of the db.
@@ -76,3 +80,6 @@ We expose 2 get interfaces:
 
 # Delete actions
 We have also exposed a delete interface. IBI will be able to request the deletion of deprecated and old mitigation actions. The deletion is done again based on the ID we have sent to the IBI when the mtigation action was stored inside our db. We may not include this interface evebtually because of the command field inside the JSON. This 'command' will instruct us to either add an action or delete an existing on or maybe even update. TBD
+
+# Update actions
+The update_action_status functionality allows you to update the status of a previously submitted mitigation action. This operation is useful for reflecting the current state of an action, such as when a mitigation process has been completed or encounters an issue.

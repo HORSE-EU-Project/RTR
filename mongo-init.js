@@ -1,4 +1,4 @@
-
+// Create the "mitigation_actions" collection with updated schema validation
 db.createCollection("mitigation_actions", {
   validator: {
     $jsonSchema: {
@@ -10,7 +10,7 @@ db.createCollection("mitigation_actions", {
         'mitigation_host',
         'action',
         'duration',
-        'intent_id',
+        'intent_id',  // Ensure intent_id is required
         'command',
         'status',
         'info'
@@ -19,20 +19,20 @@ db.createCollection("mitigation_actions", {
         intent_type: {
           bsonType: 'string',
           enum: ['mitigation', 'prevention'],
-          description: 'must be either mitigation or prevention'
+          description: 'Must be either mitigation or prevention'
         },
         threat: {
           bsonType: 'string',
           enum: ['ddos', 'dos', 'api_vul'],
-          description: 'must be either ddos, dos or api_vul'
+          description: 'Must be either ddos, dos, or api_vul'
         },
         attacked_host: {
           bsonType: 'string',
-          description: 'the IP address of the attacked host as a string'
+          description: 'The IP address of the attacked host as a string'
         },
         mitigation_host: {
           bsonType: 'string',
-          description: 'the IP address of the mitigation host as a string'
+          description: 'The IP address of the mitigation host as a string'
         },
         action: {
           bsonType: 'string',
@@ -44,7 +44,7 @@ db.createCollection("mitigation_actions", {
         },
         intent_id: {
           bsonType: 'string',
-          description: 'The unique identifier for this action'
+          description: 'The unique identifier for this action',
         },
         command: {
           bsonType: 'string',
@@ -65,27 +65,31 @@ db.createCollection("mitigation_actions", {
   }
 });
 
-  
-  db.createCollection("users", {
-    validator: {
-      $jsonSchema: {
-        bsonType: "object",
-        required: ["username", "email", "password"],
-        properties: {
-          username: {
-            bsonType: "string",
-            description: "must be a string and is required"
-          },
-          email: {
-            bsonType: "string",
-            pattern: "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$",
-            description: "must be a valid email address and is required"
-          },
-          password: {
-            bsonType: "string",
-            description: "must be a valid email address and is required"
-          }
+// Add a unique index on "intent_id" to avoid duplicate intent_ids
+db.mitigation_actions.createIndex({ "intent_id": 1 }, { unique: true });
+
+
+// Create the "users" collection with updated schema validation
+db.createCollection("users", {
+  validator: {
+    $jsonSchema: {
+      bsonType: "object",
+      required: ["username", "email", "password"],
+      properties: {
+        username: {
+          bsonType: "string",
+          description: "Must be a string and is required"
+        },
+        email: {
+          bsonType: "string",
+          pattern: "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$",
+          description: "Must be a valid email address and is required"
+        },
+        password: {
+          bsonType: "string",
+          description: "Must be a valid password and is required"
         }
       }
     }
-  });
+  }
+});
