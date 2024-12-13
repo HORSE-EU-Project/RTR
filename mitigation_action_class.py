@@ -11,7 +11,7 @@ class mitigation_action_model(BaseModel):
     mitigation_host: str = Field(..., example="172.16.2.1")
     action: str = Field(..., example="Block potentially spoofed packets with destination 192.68.0.0/24 in interface wlan")
     duration: int = Field(..., example=7000)
-    intent_id: Optional[str] = Field(None, example="ABC124")
+    intent_id: str = Field(..., example="ABC124")  # Made intent_id required (not optional)
     status: str = Field(default="pending", example="completed", description="Current status of the mitigation action")
     info: str = Field(default="to be enforced", example="Action successfully executed", description="Additional information about the action status")
 
@@ -38,8 +38,9 @@ class mitigation_action_model(BaseModel):
         }
 
 
+# UpdateActionStatusRequest now uses intent_id instead of action_id
 class UpdateActionStatusRequest(BaseModel):
-    action_id: str = Field(..., example="ABC123")
+    intent_id: str = Field(..., example="ABC124")  # Replaced action_id with intent_id
     status: str = Field(..., example="completed")
     info: str = Field(..., example="Action successfully executed")
 
@@ -50,7 +51,7 @@ class UpdateActionStatusRequest(BaseModel):
                     "summary": "Mark action as completed",
                     "description": "This marks the action as completed with additional info.",
                     "value": {
-                        "action_id": "ABC123",
+                        "intent_id": "ABC124",  # Using intent_id instead of action_id
                         "status": "completed",
                         "info": "Action successfully executed"
                     }
@@ -59,13 +60,14 @@ class UpdateActionStatusRequest(BaseModel):
                     "summary": "Mark action as error",
                     "description": "This marks the action as failed due to an error.",
                     "value": {
-                        "action_id": "ABC123",
+                        "intent_id": "ABC124",  # Using intent_id instead of action_id
                         "status": "error",
                         "info": "Execution failed due to timeout"
                     }
                 }
             }
         }
+
 
 
 class User(BaseModel):
