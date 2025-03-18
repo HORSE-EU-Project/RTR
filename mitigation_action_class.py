@@ -14,6 +14,7 @@ class mitigation_action_model(BaseModel):
     intent_id: str = Field(..., example="ABC124")  # Made intent_id required (not optional)
     status: str = Field(default="pending", example="completed", description="Current status of the mitigation action")
     info: str = Field(default="to be enforced", example="Action successfully executed", description="Additional information about the action status")
+    ansible_command: str = Field(default="", example="- hosts: [172.16.2.1]\n  tasks:\n...", description="The generated Ansible playbook command")
 
     class Config:
         schema_extra = {
@@ -31,7 +32,8 @@ class mitigation_action_model(BaseModel):
                         "duration": 7000,
                         "intent_id": "ABC124",
                         "status": "pending",
-                        "info": "to be enforced"
+                        "info": "to be enforced",
+                        "ansible_command": ""
                     }
                 }
             }
