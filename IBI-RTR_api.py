@@ -85,11 +85,11 @@ def get_action_based_on_id(intent_id: str, token: str = Depends(oauth2_scheme)):
 @rtr_api.post("/actions", status_code=status.HTTP_201_CREATED)
 def register_new_action(
     new_action: mitigation_action_model,
-    token: str = Depends(lambda: "dummy_token")  # Replace with oauth2_scheme
+    token: str = Depends(oauth2_scheme)
     ):
-    current_user = {"username": "dummy_user"}  # Simulate user
+    current_user = get_current_user(token)
 
-    # Use intent_id directly since action_id is removed
+    # Use intent_id directly
     intent_id = new_action.intent_id
 
     if new_action.command == "add":
@@ -111,9 +111,47 @@ def register_new_action(
             "duration": new_action.duration,
             "status": "pending",
             "info": "Action created, pending execution",
+            "ansible_command": ""  # Initialize the ansible_command field
         }
+        
+        try:
+            # Create playbook using the mitigation action
+            playbook = playbook_creator(new_action)
+            
+            if playbook.chosen_playbook:
+                # Generate the Ansible playbook content
+                playbook_txt = playbook.fill_in_ansible_playbook()
+                
+                # Store the Ansible command in the mitigation action
+                mitigation_actions[intent_id]["ansible_command"] = playbook_txt
+                
+                # Send the playbook to the ePEM endpoint
+                upload_result = simple_uploader(playbook_txt)
+                
+                # Update status based on the upload result
+                if upload_result:
+                    mitigation_actions[intent_id]["status"] = "sent_to_epem"
+                    mitigation_actions[intent_id]["info"] = f"Action successfully transformed and sent to ePEM with playbook: {playbook.chosen_playbook}"
+                else:
+                    mitigation_actions[intent_id]["status"] = "epem_forward_failed"
+                    mitigation_actions[intent_id]["info"] = "Failed to forward to ePEM endpoint"
+            else:
+                # No matching playbook found
+                mitigation_actions[intent_id]["status"] = "transform_failed"
+                mitigation_actions[intent_id]["info"] = "No matching playbook found for this action"
+                
+        except Exception as e:
+            # Handle any exceptions during playbook creation or sending
+            mitigation_actions[intent_id]["status"] = "error"
+            mitigation_actions[intent_id]["info"] = f"Error processing action: {str(e)}"
 
-        return {"message": "Action created", "intent_id": intent_id}
+        return {
+            "message": "Action created and processed", 
+            "intent_id": intent_id,
+            "status": mitigation_actions[intent_id]["status"],
+            "info": mitigation_actions[intent_id]["info"],
+            "ansible_command": mitigation_actions[intent_id]["ansible_command"]  # Include ansible_command in the response
+        }
 
 @rtr_api.post("/update_action_status", status_code=status.HTTP_200_OK)
 def update_action_status(status_update: UpdateActionStatusRequest):
@@ -127,7 +165,15 @@ def update_action_status(status_update: UpdateActionStatusRequest):
     if intent_id not in mitigation_actions:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Action not found")
 
+    # Update the status and info fields
     mitigation_actions[intent_id]["status"] = action_status
     mitigation_actions[intent_id]["info"] = additional_info
 
-    return {"message": "Action status updated successfully"}
+    # Return a consistent response that includes the action's details
+    return {
+        "message": "Action status updated successfully",
+        "intent_id": intent_id,
+        "status": mitigation_actions[intent_id]["status"],
+        "info": mitigation_actions[intent_id]["info"],
+        "ansible_command": mitigation_actions[intent_id].get("ansible_command", "")  # Include ansible_command if it exists
+    }
