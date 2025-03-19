@@ -29,6 +29,9 @@ class playbook_creator:
         self.action_type = self.determine_action_type()
         print(self.chosen_playbook)
 
+    # Loops through the regex patterns and checks if the action matches any of them
+    # If it does, it adds the pattern and the number of matches to a list
+    # Then it returns the pattern with the most matches (The category of the mitigation action)
     def match_mitigation_action_with_playbook(self):
         high_level_mitigation_action = self.mitigation_action.action
 
@@ -67,10 +70,13 @@ class playbook_creator:
 
         return variables
 
+    
     def fill_in_ansible_playbook(self):
+        # Extracts the variables from the yaml file, that need to be replaced with actual values of the mitigation action
         variables = self.extract_variables_from_yaml(os.path.join("ansible_playbooks", self.chosen_playbook))
         playbook_variables_dict = {}
 
+        # Loops through the variables and replaces them with the actual values of the mitigation action
         for variable in variables:
             if variable == 'mitigation_host':
                 playbook_variables_dict['mitigation_host'] = self.mitigation_action.mitigation_host
@@ -79,9 +85,17 @@ class playbook_creator:
             variable_value = re.findall(regex_patterns[variable], self.mitigation_action.action)
             playbook_variables_dict[variable] = variable_value[0] if variable_value else "UNKNOWN_VALUE"
 
+        #Using the jinja2 library, the variables are replaced with the actual values of the mitigation action
         env = Environment(loader=FileSystemLoader('ansible_playbooks'))
         template = env.get_template(self.chosen_playbook)
         rendered_template = template.render(playbook_variables_dict)
+
+        # Store the rendered template in the mitigation action's ansible_command field
+        if hasattr(self.mitigation_action, 'ansible_command'):
+            self.mitigation_action.ansible_command = rendered_template
+        else:
+            # For backward compatibility if the field doesn't exist
+            setattr(self.mitigation_action, 'ansible_command', rendered_template)
 
         print(rendered_template)
         return rendered_template

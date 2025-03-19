@@ -123,6 +123,8 @@ def register_new_action(
                 playbook_txt = playbook.fill_in_ansible_playbook()
                 
                 # Store the Ansible command in the mitigation action
+                # The ansible_command is now set in the playbook_creator.fill_in_ansible_playbook method
+                # We can access it from the new_action object or use the returned playbook_txt
                 mitigation_actions[intent_id]["ansible_command"] = playbook_txt
                 
                 # Send the playbook to the ePEM endpoint
