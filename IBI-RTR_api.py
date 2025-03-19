@@ -128,15 +128,15 @@ def register_new_action(
                 mitigation_actions[intent_id]["ansible_command"] = playbook_txt
                 
                 # Send the playbook to the ePEM endpoint
-                upload_result = simple_uploader(playbook_txt)
+                # The simple_uploader method now updates the status and info in the mitigation_action object
+                upload_result = playbook.simple_uploader(playbook_txt)
                 
-                # Update status based on the upload result
-                if upload_result:
-                    mitigation_actions[intent_id]["status"] = "sent_to_epem"
-                    mitigation_actions[intent_id]["info"] = f"Action successfully transformed and sent to ePEM with playbook: {playbook.chosen_playbook}"
-                else:
-                    mitigation_actions[intent_id]["status"] = "epem_forward_failed"
-                    mitigation_actions[intent_id]["info"] = "Failed to forward to ePEM endpoint"
+                # Update the in-memory storage with the status and info from the mitigation_action object
+                if hasattr(new_action, 'status'):
+                    mitigation_actions[intent_id]["status"] = new_action.status
+                
+                if hasattr(new_action, 'info'):
+                    mitigation_actions[intent_id]["info"] = new_action.info
             else:
                 # No matching playbook found
                 mitigation_actions[intent_id]["status"] = "transform_failed"
