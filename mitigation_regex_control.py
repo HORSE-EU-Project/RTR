@@ -27,6 +27,12 @@ class playbook_creator:
         self.mitigation_action = action_from_IBI
         self.chosen_playbook = self.match_mitigation_action_with_playbook()
         self.action_type = self.determine_action_type()
+        
+        # Get the EPEM endpoint from environment variables
+        # The .env file already includes the protocol, so we don't need to add it
+        self.epem_endpoint = os.getenv('EPEM_ENDPOINT', 'http://httpbin.org/post')
+            
+        print(f"EPEM endpoint: {self.epem_endpoint}")
         print(self.chosen_playbook)
 
     # Loops through the regex patterns and checks if the action matches any of them
@@ -101,15 +107,84 @@ class playbook_creator:
         return rendered_template
 
     def simple_uploader(self, playbook_text):
-        receiver_url = "http://httpbin.org/post"
-
-        test_response = requests.post(receiver_url, files={"form_field_name": playbook_text})
-
-        if test_response.ok:
-            print("Upload completed successfully!")
-            print(test_response.text)
-        else:
-            print("Something went wrong!")
+        # Use the EPEM endpoint from the class initialization for the API URL
+        api_url = self.epem_endpoint
+        function_url = "/v2/horse/rtr_request"
+        api_url = api_url + function_url
+        # Set up the query parameters required by the API
+        params = {
+            "target_ip": self.mitigation_action.mitigation_host,  # Use the mitigation host as target IP
+            "target_port": "22",  # Default SSH port for Ansible
+            "service": "DNS",  # As specified in the documentation
+            "actionType": self.action_type,  # Use the determined action type
+            "actionID": self.mitigation_action.intent_id  # Use the intent_id as actionID
+        }
+        
+        # Set up the headers
+        headers = {
+            "Content-Type": "application/yaml"
+        }
+        
+        print(f"Sending playbook to endpoint: {api_url}")
+        print(f"With parameters: {params}")
+        
+        try:
+            # Send the request to the API
+            response = requests.post(
+                api_url,
+                params=params,
+                headers=headers,
+                data=playbook_text
+            )
+            
+            # Check if the request was successful
+            if response.status_code == 200:
+                print("Upload completed successfully!")
+                print(response.text)
+                
+                # Update mitigation action status and info to reflect success
+                if hasattr(self.mitigation_action, 'status'):
+                    self.mitigation_action.status = "sent_to_epem"
+                else:
+                    setattr(self.mitigation_action, 'status', "sent_to_epem")
+                    
+                if hasattr(self.mitigation_action, 'info'):
+                    self.mitigation_action.info = f"Action successfully transformed and sent to ePEM. Response: {response.text[:100]}..."
+                else:
+                    setattr(self.mitigation_action, 'info', f"Action successfully transformed and sent to ePEM. Response: {response.text[:100]}...")
+                
+                return True
+            else:
+                print(f"Request failed with status code: {response.status_code}")
+                print(f"Response: {response.text if hasattr(response, 'text') else 'No response text'}")
+                
+                # Update mitigation action status and info to reflect failure
+                if hasattr(self.mitigation_action, 'status'):
+                    self.mitigation_action.status = "epem_forward_failed"
+                else:
+                    setattr(self.mitigation_action, 'status', "epem_forward_failed")
+                    
+                if hasattr(self.mitigation_action, 'info'):
+                    self.mitigation_action.info = f"Failed to forward to ePEM endpoint. Status code: {response.status_code}. Response: {response.text[:100] if hasattr(response, 'text') else 'No response'}"
+                else:
+                    setattr(self.mitigation_action, 'info', f"Failed to forward to ePEM endpoint. Status code: {response.status_code}. Response: {response.text[:100] if hasattr(response, 'text') else 'No response'}")
+                
+                return False
+        except Exception as e:
+            print(f"An error occurred: {str(e)}")
+            
+            # Update mitigation action status and info to reflect error
+            if hasattr(self.mitigation_action, 'status'):
+                self.mitigation_action.status = "epem_request_error"
+            else:
+                setattr(self.mitigation_action, 'status', "epem_request_error")
+                
+            if hasattr(self.mitigation_action, 'info'):
+                self.mitigation_action.info = f"Error when communicating with ePEM: {str(e)}"
+            else:
+                setattr(self.mitigation_action, 'info', f"Error when communicating with ePEM: {str(e)}")
+            
+            return False
 
 
 if __name__ == "__main__":
