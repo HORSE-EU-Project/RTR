@@ -1,0 +1,32 @@
+---
+- name: Configure Router Rate Limiting
+  hosts: {{mitigation_host}}
+  become: yes
+  gather_facts: no
+  
+  tasks:
+    - name: Back up router configuration
+      ios_config:
+        backup: yes
+      when: device is defined
+      
+    - name: Configure QoS policy for rate limiting
+      ios_config:
+        lines:
+          - "class-map match-all RATE_LIMIT_CLASS"
+          - "match any"
+          - "policy-map RATE_LIMIT_POLICY"
+          - "class RATE_LIMIT_CLASS"
+          - "police {{rate}}000 conform-action transmit exceed-action drop"
+          - "interface GigabitEthernet0/0"
+          - "service-policy input RATE_LIMIT_POLICY"
+        save_when: modified
+      when: device is defined
+      
+    - name: Set rate limiting duration
+      at:
+        command: "/sbin/ios_config 'interface GigabitEthernet0/0' 'no service-policy input RATE_LIMIT_POLICY'"
+        count: 1
+        units: minutes
+        count_unit: "{{duration}}"
+      when: duration is defined

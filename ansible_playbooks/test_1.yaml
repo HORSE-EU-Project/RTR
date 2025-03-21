@@ -1,0 +1,18 @@
+---
+- name: Test Scenario 1
+  hosts: {{mitigation_host}}
+  gather_facts: no
+  
+  tasks:
+    - name: Log test execution
+      debug:
+        msg: "Executing Test Scenario 1 (ID: {{test_id}})"
+        
+    - name: List modules being tested
+      debug:
+        msg: "Testing modules: {{modules | join(', ')}}"
+        
+    # No actual changes - this is just a test
+    - name: Simulate test completion
+      command: /bin/echo "Test 1 completed successfully"
+      changed_when: false

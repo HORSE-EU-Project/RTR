@@ -1,0 +1,26 @@
+---
+- name: Process Data Reset Request
+  hosts: {{mitigation_host}}
+  become: yes
+  gather_facts: no
+  
+  tasks:
+    - name: Log reset request
+      debug:
+        msg: "Processing data reset request for module {{target_module}} with interval {{reset_interval}}"
+    
+    - name: Send reset signal to target module
+      uri:
+        url: "http://{{target_module}}.service.internal/api/reset"
+        method: POST
+        body_format: json
+        body:
+          reset_interval: "{{reset_interval}}"
+          initiated_by: "RTR"
+        status_code: 200
+      register: reset_result
+      ignore_errors: yes
+      
+    - name: Report reset status
+      debug:
+        msg: "Reset request {{reset_result.status}}"

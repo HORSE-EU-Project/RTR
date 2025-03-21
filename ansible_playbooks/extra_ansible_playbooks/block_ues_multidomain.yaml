@@ -1,0 +1,27 @@
+---
+- name: Block UEs Across Multiple Domains
+  hosts: {{mitigation_host}}
+  become: yes
+  gather_facts: no
+  
+  tasks:
+    - name: Log multidomain blocking request
+      debug:
+        msg: "Blocking UEs across domains: {{domains | join(', ')}} with rate limiting: {{rate_limiting}}"
+      
+    - name: Apply domain-specific blocking rules
+      include_tasks: domain_block.yaml
+      loop: "{{domains}}"
+      loop_control:
+        loop_var: domain
+        
+    - name: Configure generic rate limiting
+      lineinfile:
+        path: /etc/network/rate-limiting.conf
+        line: "mode = {{rate_limiting}}"
+        create: yes
+      when: rate_limiting is defined and rate_limiting != ""
+      
+    - name: Apply configuration changes
+      command: /bin/true
+      changed_when: true

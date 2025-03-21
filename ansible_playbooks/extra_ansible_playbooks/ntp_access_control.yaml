@@ -1,0 +1,36 @@
+---
+- name: Configure NTP Access Control
+  hosts: {{mitigation_host}}
+  become: yes
+  gather_facts: no
+  
+  tasks:
+    - name: Backup existing NTP configuration
+      copy:
+        src: /etc/ntp.conf
+        dest: /etc/ntp.conf.backup
+        remote_src: yes
+      
+    - name: Clear existing restrict lines
+      lineinfile:
+        path: /etc/ntp.conf
+        regexp: '^restrict '
+        state: absent
+      
+    - name: Add default deny rule (if whitelist mode)
+      lineinfile:
+        path: /etc/ntp.conf
+        line: "restrict default ignore"
+        insertafter: "^# Access control"
+      when: mode == "whitelist"
+      
+    - name: Add authorized hosts
+      lineinfile:
+        path: /etc/ntp.conf
+        line: "restrict {{item}} nomodify notrap"
+      loop: "{{authorized_hosts}}"
+      
+    - name: Restart NTP service
+      service:
+        name: ntp
+        state: restarted

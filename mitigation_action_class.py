@@ -1,17 +1,29 @@
 from pydantic import BaseModel, Field
-from typing import Optional, Literal
+from typing import Optional, Literal, Dict, Any, List
 
 
 # Enhanced mitigation_action_model
 class mitigation_action_model(BaseModel):
+    
     command: str = Field(..., example="add")  # Example for Swagger UI
     intent_type: str = Field(..., example="mitigation")
-    threat: str = Field(..., example="ddos")
-    attacked_host: str = Field(..., example="10.0.0.1")
-    mitigation_host: str = Field(..., example="172.16.2.1")
-    action: str = Field(..., example="Block potentially spoofed packets with destination 192.68.0.0/24 in interface wlan")
-    duration: int = Field(..., example=7000)
     intent_id: str = Field(..., example="ABC124")  # Made intent_id required (not optional)
+    threat: str = Field(default="", example="ddos")
+    target_domain: str = Field(default="", example="example.com")
+    # Changed from str to Union[str, ActionObject] to accept either a string or a structured object
+    action: Dict[str, Any] = Field(..., example={
+        "name": "dns_rate_limiting", 
+        "intent_id": "30001", 
+        "fields": {
+            "rate": 20, 
+            "duration": 60, 
+            "source_ip_filter": ["malicious_ips"]
+        }
+    })
+    
+    attacked_host: str = Field(default="0.0.0.0", example="10.0.0.1")
+    mitigation_host: str = Field(default="0.0.0.0", example="172.16.2.1")    
+    duration: int = Field(default=0, example=7000)    
     status: str = Field(default="pending", example="completed", description="Current status of the mitigation action")
     info: str = Field(default="to be enforced", example="Action successfully executed", description="Additional information about the action status")
     ansible_command: str = Field(default="", example="- hosts: [172.16.2.1]\n  tasks:\n...", description="The generated Ansible playbook command")
@@ -24,13 +36,21 @@ class mitigation_action_model(BaseModel):
                     "description": "This example creates a mitigation action to block spoofed packets.",
                     "value": {
                         "command": "add",
-                        "intent_type": "mitigation",
+                        "intent_type": "mitigation", 
+                        "intent_id": "ABC124",
                         "threat": "ddos",
+                        "action": { 
+                            "name": "dns_rate_limiting",
+                            "intent_id": "30001",
+                            "fields": {
+                                "rate": 20,
+                                "duration": 60,
+                                "source_ip_filter": ["malicious_ips"]
+                            }
+                        },
                         "attacked_host": "10.0.0.1",
                         "mitigation_host": "172.16.2.1",
-                        "action": "Block potentially spoofed packets with destination 192.68.0.0/24 in interface wlan",
                         "duration": 7000,
-                        "intent_id": "ABC124",
                         "status": "pending",
                         "info": "to be enforced",
                         "ansible_command": ""

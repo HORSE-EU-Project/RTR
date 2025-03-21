@@ -1,0 +1,26 @@
+---
+- name: Configure Firewall for PFCP Requests
+  hosts: {{mitigation_host}}
+  become: yes
+  gather_facts: no
+  
+  tasks:
+    - name: Log PFCP request filtering configuration
+      debug:
+        msg: "Configuring firewall to drop {{drop_percentage}} of PFCP requests (types: {{request_types | join(', ')}})"
+        
+    - name: Set up iptables for PFCP traffic
+      iptables:
+        chain: INPUT
+        protocol: udp
+        destination_port: 8805
+        match: statistic
+        match_extension: "--mode random --probability {{drop_percentage|replace('%', '')|int / 100}}"
+        jump: DROP
+        comment: "Drop percentage of PFCP traffic"
+      
+    - name: Save iptables rules
+      shell: iptables-save > /etc/iptables/rules.v4
+      args:
+        executable: /bin/bash
+      changed_when: true

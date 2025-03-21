@@ -1,0 +1,39 @@
+---
+- name: Configure API Rate Limiting
+  hosts: {{mitigation_host}}
+  become: yes
+  gather_facts: no
+  
+  tasks:
+    - name: Check if nginx is installed
+      command: which nginx
+      register: nginx_check
+      ignore_errors: yes
+      changed_when: false
+      
+    - name: Install nginx if not present
+      apt:
+        name: nginx
+        state: present
+      when: nginx_check.rc != 0
+      
+    - name: Configure rate limiting in nginx
+      blockinfile:
+        path: /etc/nginx/conf.d/rate_limit.conf
+        create: yes
+        block: |
+          limit_req_zone $binary_remote_addr zone=api_limit:10m rate={{limit}};
+          
+          server {
+            listen 80;
+            
+            location /api/ {
+              limit_req zone=api_limit burst=20 nodelay;
+              proxy_pass http://localhost:8080;
+            }
+          }
+        
+    - name: Restart nginx
+      service:
+        name: nginx
+        state: restarted

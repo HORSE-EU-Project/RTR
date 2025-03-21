@@ -101,17 +101,17 @@ def register_new_action(
 
         # Store action in memory with initial status
         mitigation_actions[intent_id] = {
-            "intent_id": intent_id,
             "command": new_action.command,
             "intent_type": new_action.intent_type,
+            "intent_id": intent_id,
             "threat": new_action.threat,
+            "action": new_action.action,
             "attacked_host": new_action.attacked_host,
             "mitigation_host": new_action.mitigation_host,
-            "action": new_action.action,
             "duration": new_action.duration,
-            "status": "pending",
-            "info": "Action created, pending execution",
-            "ansible_command": ""  # Initialize the ansible_command field
+            "status": new_action.status,
+            "info": new_action.info,
+            "ansible_command": new_action.ansible_command
         }
         
         try:
