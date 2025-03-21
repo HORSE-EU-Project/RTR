@@ -25,8 +25,7 @@ class playbook_creator:
             ('anycast_blackhole', r'\b(redirect|direct|dns|server|service|traffic|igress|blackhole)\b', 'ANYCAST_BLACKHOLE')
         ]
         self.mitigation_action = action_from_IBI
-        self.chosen_playbook = self.match_mitigation_action_with_playbook()
-        self.action_type = self.determine_action_type()
+        self.action_type, self.chosen_playbook = self.match_mitigation_action_with_playbook()
         
         # Get the EPEM endpoint from environment variables
         # The .env file already includes the protocol, so we don't need to add it
