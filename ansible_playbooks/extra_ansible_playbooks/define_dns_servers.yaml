@@ -1,0 +1,24 @@
+---
+- name: Define DNS Servers
+  hosts: {{mitigation_host}}
+  become: yes
+  gather_facts: no
+  
+  tasks:
+    - name: Backup existing resolv.conf
+      copy:
+        src: /etc/resolv.conf
+        dest: /etc/resolv.conf.backup
+        remote_src: yes
+        
+    - name: Clear existing nameserver entries
+      lineinfile:
+        path: /etc/resolv.conf
+        regexp: '^nameserver '
+        state: absent
+        
+    - name: Add new DNS servers
+      lineinfile:
+        path: /etc/resolv.conf
+        line: "nameserver {{item}}"
+      loop: "{{dns_servers}}"

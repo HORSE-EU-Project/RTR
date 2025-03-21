@@ -1,0 +1,35 @@
+---
+- name: Discard Unauthorized Packets
+  hosts: {{mitigation_host}}
+  become: yes
+  gather_facts: no
+  
+  tasks:
+    - name: Set up packet filtering
+      blockinfile:
+        path: /etc/network/filter-rules.sh
+        create: yes
+        mode: '0755'
+        block: |
+          #!/bin/bash
+          
+          # Apply {{filter}} filtering
+          if [ "{{filter}}" == "MAC" ]; then
+            ebtables -A INPUT -j DROP
+          elif [ "{{filter}}" == "IP" ]; then
+            iptables -A INPUT -j DROP
+          fi
+          
+    - name: Execute filtering script
+      command: /etc/network/filter-rules.sh
+      
+    - name: Trigger external alarm if requested
+      uri:
+        url: "http://alarm-system.internal/api/trigger"
+        method: POST
+        body_format: json
+        body:
+          source: "RTR"
+          event: "Unauthorized packet detection"
+          severity: "high"
+      when: alarm == "trigger_external"

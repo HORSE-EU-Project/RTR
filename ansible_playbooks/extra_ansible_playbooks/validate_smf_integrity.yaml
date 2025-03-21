@@ -1,0 +1,24 @@
+---
+- name: Validate SMF Integrity
+  hosts: {{mitigation_host}}
+  become: yes
+  gather_facts: no
+  
+  tasks:
+    - name: Check SMF integrity
+      uri:
+        url: "http://localhost:9090/smf/status"
+        method: GET
+        return_content: yes
+      register: smf_status
+      ignore_errors: yes
+        
+    - name: Restart SMF if compromised
+      service:
+        name: smf-service
+        state: restarted
+      when: check == "if compromised" and "compromised" in smf_status.content
+        
+    - name: Notify about SMF status
+      debug:
+        msg: "SMF integrity check complete. Action: {{action}}"

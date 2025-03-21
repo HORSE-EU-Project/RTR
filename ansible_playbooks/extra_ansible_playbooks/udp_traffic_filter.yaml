@@ -1,0 +1,22 @@
+---
+- name: Configure UDP Traffic Filter
+  hosts: {{mitigation_host}}
+  become: yes
+  gather_facts: no
+  
+  tasks:
+    - name: Set up UDP filtering with iptables
+      iptables:
+        chain: INPUT
+        protocol: udp
+        destination_port: {{destination_port}}
+        source: "{{item}}"
+        jump: DROP
+        comment: "Block malicious UDP traffic to port {{destination_port}}"
+      loop: "{{source_ip_filter}}"
+      
+    - name: Save iptables rules
+      shell: iptables-save > /etc/iptables/rules.v4
+      args:
+        executable: /bin/bash
+      changed_when: true
