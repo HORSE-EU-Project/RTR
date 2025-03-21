@@ -44,16 +44,22 @@ class playbook_creator:
         else:
             # If it's a dictionary, use the action name as the primary criteria
             action_obj = self.mitigation_action.action
-            action_name = action_obj.get("name", "").lower() # maybe need to add control for uppercase
+            action_name = action_obj.get("name", "").upper() # maybe need to add control for uppercase
             
             # Map action names directly to playbooks if possible
             action_name_to_playbook = {
-                "dns_rate_limiting": "dns_rate_limiting.yaml",
-                "dns_service_disable": "dns_service_disable.yaml",
-                "dns_service_handover": "dns_service_handover.yaml",
-                "dns_firewall_spoofing_detection": "dns_firewall_spoofing_detection.yaml",
-                "test_1": "test_1.yaml",
-                "test_2": "test_2.yaml"
+                #ePEM action Types:
+                "DNS_RATE_LIMIT": "dns_rate_limiting.yaml",
+                "DNS_SERV_DISABLE": "dns_service_disable.yaml",
+                "DNS_SERV_ENABLE": "dns_service_enable.yaml",
+                "TEST": "test_1.yaml",
+                
+                #other action types:
+                "DNS_RATE_LIMITING": "dns_rate_limiting.yaml",
+                "DNS_SERVICE_DISABLE": "dns_service_disable.yaml",
+                "DNS_SERVICE_HANDOVER": "dns_service_handover.yaml",
+                "DNS_FIREWALL_SPOOFING_DETECTION": "dns_firewall_spoofing_detection.yaml",
+                "TEST_2": "test_2.yaml"
             }
             
             # If we have a direct mapping, return it immediately

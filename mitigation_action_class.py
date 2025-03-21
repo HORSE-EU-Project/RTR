@@ -12,7 +12,7 @@ class mitigation_action_model(BaseModel):
     target_domain: str = Field(default="", example="example.com")
     # Changed from str to Union[str, ActionObject] to accept either a string or a structured object
     action: Dict[str, Any] = Field(..., example={
-        "name": "dns_rate_limiting", 
+        "name": "dns_rate_limit", 
         "intent_id": "30001", 
         "fields": {
             "rate": 20, 
@@ -40,7 +40,7 @@ class mitigation_action_model(BaseModel):
                         "intent_id": "ABC124",
                         "threat": "ddos",
                         "action": { 
-                            "name": "dns_rate_limiting",
+                            "name": "dns_rate_limit",
                             "intent_id": "30001",
                             "fields": {
                                 "rate": 20,

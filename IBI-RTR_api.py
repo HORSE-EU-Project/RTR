@@ -12,6 +12,8 @@ from pymongo import MongoClient
 from typing import Dict
 import os
 import uuid
+import asyncio
+import threading
 
 # Load environment variables
 load_dotenv(find_dotenv())
@@ -105,12 +107,13 @@ def register_new_action(
             "intent_type": new_action.intent_type,
             "intent_id": intent_id,
             "threat": new_action.threat,
+            "target_domain": new_action.target_domain,
             "action": new_action.action,
             "attacked_host": new_action.attacked_host,
             "mitigation_host": new_action.mitigation_host,
             "duration": new_action.duration,
-            "status": new_action.status,
-            "info": new_action.info,
+            "status": "processing",  # Initial status while processing
+            "info": "Playbook creation in progress",
             "ansible_command": new_action.ansible_command
         }
         
@@ -123,36 +126,34 @@ def register_new_action(
                 playbook_txt = playbook.fill_in_ansible_playbook()
                 
                 # Store the Ansible command in the mitigation action
-                # The ansible_command is now set in the playbook_creator.fill_in_ansible_playbook method
-                # We can access it from the new_action object or use the returned playbook_txt
                 mitigation_actions[intent_id]["ansible_command"] = playbook_txt
+                mitigation_actions[intent_id]["status"] = "playbook_created"
+                mitigation_actions[intent_id]["info"] = "Playbook created, forwarding to ePEM in background"
                 
-                # Send the playbook to the ePEM endpoint
-                # The simple_uploader method now updates the status and info in the mitigation_action object
-                upload_result = playbook.simple_uploader(playbook_txt)
+                # Start a background thread to handle the upload
+                background_thread = threading.Thread(
+                    target=run_in_background,
+                    args=(playbook, playbook_txt, intent_id)
+                )
+                background_thread.daemon = True  # Set as daemon so it doesn't block server shutdown
+                background_thread.start()
                 
-                # Update the in-memory storage with the status and info from the mitigation_action object
-                if hasattr(new_action, 'status'):
-                    mitigation_actions[intent_id]["status"] = new_action.status
-                
-                if hasattr(new_action, 'info'):
-                    mitigation_actions[intent_id]["info"] = new_action.info
             else:
                 # No matching playbook found
                 mitigation_actions[intent_id]["status"] = "transform_failed"
                 mitigation_actions[intent_id]["info"] = "No matching playbook found for this action"
                 
         except Exception as e:
-            # Handle any exceptions during playbook creation or sending
+            # Handle any exceptions during playbook creation
             mitigation_actions[intent_id]["status"] = "error"
             mitigation_actions[intent_id]["info"] = f"Error processing action: {str(e)}"
 
         return {
-            "message": "Action created and processed", 
+            "message": "Action created and being processed", 
             "intent_id": intent_id,
             "status": mitigation_actions[intent_id]["status"],
             "info": mitigation_actions[intent_id]["info"],
-            "ansible_command": mitigation_actions[intent_id]["ansible_command"]  # Include ansible_command in the response
+            "ansible_command": mitigation_actions[intent_id]["ansible_command"]
         }
 
 @rtr_api.post("/update_action_status", status_code=status.HTTP_200_OK)
@@ -179,3 +180,25 @@ def update_action_status(status_update: UpdateActionStatusRequest):
         "info": mitigation_actions[intent_id]["info"],
         "ansible_command": mitigation_actions[intent_id].get("ansible_command", "")  # Include ansible_command if it exists
     }
+    
+# Add a background task function
+def run_in_background(playbook, playbook_txt, intent_id):
+    """Run the simple_uploader function in a background thread and update the mitigation_actions dict"""
+    try:
+        # Execute the simple_uploader
+        playbook.simple_uploader(playbook_txt)
+        
+        # After uploading is done, update the in-memory storage with the latest status and info
+        if hasattr(playbook.mitigation_action, 'status'):
+            mitigation_actions[intent_id]["status"] = playbook.mitigation_action.status
+        
+        if hasattr(playbook.mitigation_action, 'info'):
+            mitigation_actions[intent_id]["info"] = playbook.mitigation_action.info
+            
+        print(f"Background task completed for intent_id: {intent_id}")
+        
+    except Exception as e:
+        # Update with error information if an exception occurs
+        mitigation_actions[intent_id]["status"] = "error"
+        mitigation_actions[intent_id]["info"] = f"Error in background task: {str(e)}"
+        print(f"Error in background task for intent_id {intent_id}: {str(e)}")
