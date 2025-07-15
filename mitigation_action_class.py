@@ -1,25 +1,21 @@
 from pydantic import BaseModel, Field
-from typing import Optional, Literal, Dict, Any, List
+from typing import Optional, Literal, Dict, Any, List, Union
 
 
 # Enhanced mitigation_action_model
 class mitigation_action_model(BaseModel):
     
-    command: str = Field(..., example="add")  # Example for Swagger UI
+    command: str = Field(default="add", example="add")  # Example for Swagger UI
     intent_type: str = Field(..., example="mitigation")
     intent_id: str = Field(..., example="ABC124")  # Made intent_id required (not optional)
     threat: str = Field(default="", example="ddos")
     target_domain: str = Field(default="", example="example.com")
-    # Changed from str to Union[str, ActionObject] to accept either a string or a structured object
-    action: Dict[str, Any] = Field(..., example={
-        "name": "dns_rate_limit", 
-        "intent_id": "30001", 
-        "fields": {
-            "rate": 20, 
-            "duration": 60, 
-            "source_ip_filter": ["malicious_ips"]
-        }
-    })
+    # Changed to Union[str, Dict[str, Any]] to accept either a string or a structured object
+    action: Union[str, Dict[str, Any]] = Field(..., example=
+        "Can use a string like 'rate limit DNS server at ip 10.10.2.1 at port 123, for 20 requests per second' "
+        "or a dictionary with structured fields like:"
+        '{"name": "dns_rate_limit", "intent_id": "30001", "fields": {"rate": 20, "duration": 60, "source_ip_filter": ["malicious_ips"]}}' 
+    )
     
     attacked_host: str = Field(default="0.0.0.0", example="10.0.0.1")
     mitigation_host: str = Field(default="0.0.0.0", example="172.16.2.1")    
@@ -31,13 +27,13 @@ class mitigation_action_model(BaseModel):
     class Config:
         schema_extra = {
             "examples": {
-                "Add a DDoS Mitigation Action": {
-                    "summary": "Create an action to mitigate a DDoS attack",
-                    "description": "This example creates a mitigation action to block spoofed packets.",
+                "Add a DDoS Mitigation Action (Dictionary Format)": {
+                    "summary": "Create an action to mitigate a DDoS attack using structured format",
+                    "description": "This example creates a mitigation action using the recommended dictionary format.",
                     "value": {
                         "command": "add",
                         "intent_type": "mitigation", 
-                        "intent_id": "ABC124",
+                        "intent_id": "30001",
                         "threat": "ddos",
                         "action": { 
                             "name": "dns_rate_limit",
@@ -49,6 +45,23 @@ class mitigation_action_model(BaseModel):
                             }
                         },
                         "attacked_host": "10.0.0.1",
+                        "mitigation_host": "172.16.2.1",
+                        "duration": 7000,
+                        "status": "pending",
+                        "info": "to be enforced",
+                        "ansible_command": ""
+                    }
+                },
+                "Add a DDoS Mitigation Action (String Format)": {
+                    "summary": "Create an action to mitigate a DDoS attack using string format",
+                    "description": "This example creates a mitigation action using the legacy string format.",
+                    "value": {
+                        "command": "add",
+                        "intent_type": "mitigation", 
+                        "intent_id": "ABC125",
+                        "threat": "ddos",
+                        "action": "rate limit DNS server at ip 10.10.2.1 at port 123, for 20 requests per second",
+                        "attacked_host": "10.10.2.1",
                         "mitigation_host": "172.16.2.1",
                         "duration": 7000,
                         "status": "pending",
