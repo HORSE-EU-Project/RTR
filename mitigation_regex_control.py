@@ -27,6 +27,12 @@ class playbook_creator:
         self.mitigation_action = action_from_IBI
         self.action_type, self.chosen_playbook = self.match_mitigation_action_with_playbook()
         
+        # Fill in the Ansible playbook with actual values if the playbook was found
+        if self.chosen_playbook != "UNKNOWN_ACTION_TYPE":
+            # Try to fill in the playbook with actual values
+            self.fill_in_ansible_playbook()
+        
+        
         # Get the EPEM endpoint from environment variables
         # The .env file already includes the protocol, so we don't need to add it
         self.epem_endpoint = os.getenv('EPEM_ENDPOINT', 'http://httpbin.org/post')
@@ -34,72 +40,76 @@ class playbook_creator:
         print(f"EPEM endpoint: {self.epem_endpoint}")
         print(self.chosen_playbook)
 
-    # Loops through the regex patterns and checks if the action matches any of them
-    # If it does, it adds the pattern and the number of matches to a list
-    # Then it returns the pattern with the most matches (The category of the mitigation action)
+    
+    def dict_ansible_transformation(self):
+        """
+        Handle dictionary-based action transformation to playbook mapping.
+        Returns tuple of (action_name, playbook_filename)
+        """
+        # If it's a dictionary, use the action name as the primary criteria
+        action_obj = self.mitigation_action.action
+        action_name = action_obj.get("name", "").upper() # maybe need to add control for uppercase
+        
+        # Map action names directly to playbooks if possible
+        action_name_to_playbook = {
+            #ePEM action Types:
+            "DNS_RATE_LIMIT": "dns_rate_limiting.yaml",
+            "DNS_SERV_DISABLE": "dns_service_disable.yaml",
+            "DNS_SERV_ENABLE": "dns_service_enable.yaml",
+            "TEST": "test_1.yaml",
+            
+            #other action types:
+            "DNS_RATE_LIMITING": "dns_rate_limiting.yaml",
+            "DNS_SERVICE_DISABLE": "dns_service_disable.yaml",
+            "DNS_SERVICE_HANDOVER": "dns_service_handover.yaml",
+            "DNS_FIREWALL_SPOOFING_DETECTION": "dns_firewall_spoofing_detection.yaml",
+            "TEST_2": "test_2.yaml"
+        }
+        
+        # If we have a direct mapping, return it immediately
+        if action_name in action_name_to_playbook:
+            return action_name, action_name_to_playbook[action_name]
+        else:
+            error_msg = f"No matching playbook found for action name: {action_name}. Allowed action names (case insensitive) are: {', '.join(action_name_to_playbook.keys())}"
+            print(error_msg)  # Keep for server logs
+            # Store the error message in the mitigation action for API response
+            self.mitigation_action.info = error_msg
+            return action_name, "UNKNOWN_ACTION_TYPE"
+
+    def string_ansible_transformation(self):
+        """
+        Handle string-based action transformation using regex patterns.
+        Returns tuple of (action_type, playbook_filename)
+        """
+        high_level_mitigation_action = self.mitigation_action.action
+        
+        # Use regex patterns to match the string action to a playbook
+        best_match = None
+        best_match_count = 0
+        
+        for playbook_file, pattern, action_type in self.current_patterns:
+            matches = re.findall(pattern, high_level_mitigation_action, re.IGNORECASE)
+            match_count = len(matches)
+            
+            if match_count > best_match_count:
+                best_match_count = match_count
+                best_match = (action_type, playbook_file)
+        
+        if best_match:
+            return best_match
+        else:
+            error_msg = f"No matching playbook found for string action: '{high_level_mitigation_action}'"
+            print(error_msg)
+            self.mitigation_action.info = error_msg
+            return "UNKNOWN_ACTION_TYPE", "UNKNOWN_ACTION_TYPE"
+
     def match_mitigation_action_with_playbook(self):
         # Check if action is a string or a dictionary
         if isinstance(self.mitigation_action.action, str):
-            high_level_mitigation_action = self.mitigation_action.action
+            return self.string_ansible_transformation()
         else:
-            # If it's a dictionary, use the action name as the primary criteria
-            action_obj = self.mitigation_action.action
-            action_name = action_obj.get("name", "").upper() # maybe need to add control for uppercase
-            
-            # Map action names directly to playbooks if possible
-            action_name_to_playbook = {
-                #ePEM action Types:
-                "DNS_RATE_LIMIT": "dns_rate_limiting.yaml",
-                "DNS_SERV_DISABLE": "dns_service_disable.yaml",
-                "DNS_SERV_ENABLE": "dns_service_enable.yaml",
-                "TEST": "test_1.yaml",
-                
-                #other action types:
-                "DNS_RATE_LIMITING": "dns_rate_limiting.yaml",
-                "DNS_SERVICE_DISABLE": "dns_service_disable.yaml",
-                "DNS_SERVICE_HANDOVER": "dns_service_handover.yaml",
-                "DNS_FIREWALL_SPOOFING_DETECTION": "dns_firewall_spoofing_detection.yaml",
-                "TEST_2": "test_2.yaml"
-            }
-            
-            # If we have a direct mapping, return it immediately
-            if action_name in action_name_to_playbook:
-                return action_name,action_name_to_playbook[action_name]
-            else:
-                print(f"No matching playbook found for action name: {action_name}")
-                return action_name, "UNKNOWN_ACTION_TYPE"
-
-
-    def determine_action_type(self):
-        # Check if we have a chosen playbook
-        if not self.chosen_playbook:
-            return "UNKNOWN_ACTION_TYPE"
-        
-        # If action is a dictionary, try to use the action name directly
-        if isinstance(self.mitigation_action.action, dict):
-            action_name = self.mitigation_action.action.get("name", "").upper()
-            if action_name:
-                # Map from action name to action type
-                action_name_to_type = {
-                    "DNS_RATE_LIMITING": "DNS_RATE_LIMIT",
-                    "DNS_SERVICE_DISABLE": "DNS_SERV_DISABLE",
-                    "DNS_SERVICE_HANDOVER": "DNS_HANDOVER",
-                    "DNS_FIREWALL_SPOOFING_DETECTION": "DNS_FIREWALL_SPOOF",
-                    "ANYCAST_BLACKHOLE": "ANYCAST_BLACKHOLE"
-                }
-                
-                # If we have a direct mapping, use it
-                if action_name in action_name_to_type:
-                    return action_name_to_type[action_name]
-        
-        # Fall back to original method if the direct mapping doesn't work
-        playbook_tuple = list(filter(lambda t: self.chosen_playbook in t, self.current_patterns))
-
-        if not playbook_tuple:
-            print(f"No matching playbook found for chosen_playbook: {self.chosen_playbook}")
-            return "UNKNOWN_ACTION_TYPE"
-
-        return playbook_tuple[0][2]
+            # Use the new dict_ansible_transformation method
+            return self.dict_ansible_transformation()
 
     def extract_variables_from_yaml(self, yaml_file):
         variables = []

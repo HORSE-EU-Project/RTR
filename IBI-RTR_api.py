@@ -7,7 +7,6 @@ from oauth import get_current_user
 from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
 from fastapi.middleware.cors import CORSMiddleware
 from jwttoken import create_access_token
-from send_mitigation_rules import simple_uploader
 from pymongo import MongoClient
 from typing import Dict
 import os
@@ -139,9 +138,10 @@ def register_new_action(
                 background_thread.start()
                 
             else:
-                # No matching playbook found
+                # No matching playbook found - use the detailed error message from playbook_creator
+                error_info = getattr(playbook.mitigation_action, 'info', 'No matching playbook found for this action')
                 mitigation_actions[intent_id]["status"] = "transform_failed"
-                mitigation_actions[intent_id]["info"] = "No matching playbook found for this action"
+                mitigation_actions[intent_id]["info"] = error_info
                 
         except Exception as e:
             # Handle any exceptions during playbook creation
