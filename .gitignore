@@ -28,3 +28,25 @@ var/
 *.egg-info/
 .installed.cfg
 *.egg
+
+# Models (GGUF files are large)
+models/*.gguf
+models/*.bin
+models/*.safetensors
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Docker
+.dockerignore
+
+# Logs
+logs/
+*.log
+
+# Database
+*.db
+*.sqlite
