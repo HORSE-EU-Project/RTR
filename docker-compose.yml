@@ -13,11 +13,38 @@ services:
       - ./app:/app/app
       - ./config:/app/config
       - ./ansible_playbooks:/app/ansible_playbooks
-      - ./models:/app/models
+      - ./llm_server/models:/app/models
     depends_on:
       - mongodb
+      - llm-server
     networks:
       - rtr-network
+    environment:
+      - LLM_SERVER_URL=http://llm-server:8080
+
+  llm-server:
+    build:
+      context: ./llm_server
+      dockerfile: Dockerfile
+    ports:
+      - "8081:8080"  # Map external 8081 to internal 8080 (avoid conflict with RTR API)
+    volumes:
+      - ./llm_server/models:/models
+    networks:
+      - rtr-network
+    environment:
+      - MODEL=/models/gemma-2-2b-it-Q4_K_M.gguf
+      - HOST=0.0.0.0
+      - PORT=8080
+      - N_CTX=2048
+      - N_THREADS=4
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/v1/models"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
 
   mongodb:
     image: mongo:4.4

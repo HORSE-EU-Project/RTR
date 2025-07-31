@@ -1,0 +1,5 @@
+# LLM Server dependencies
+llama-cpp-python[server]==0.2.56
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+pydantic==2.5.0

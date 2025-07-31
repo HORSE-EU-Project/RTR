@@ -23,9 +23,14 @@ class Settings:
     # EPEM endpoint settings
     EPEM_ENDPOINT: str = os.getenv('EPEM_ENDPOINT', 'http://httpbin.org/post')
     
-    # Model settings
-    MODEL_PATH: str = os.getenv('MODEL_PATH', 'models/gemma-2b-it.Q4_K_M.gguf')
+    # LLM Server settings
+    LLM_SERVER_URL: str = os.getenv('LLM_SERVER_URL', 'http://llm-server:8080')
+    LLM_SERVER_HOST: str = os.getenv('LLM_SERVER_HOST', 'llm-server')
+    LLM_SERVER_PORT: int = int(os.getenv('LLM_SERVER_PORT', '8080'))
     
+    # Model settings (legacy - for backward compatibility)
+    MODEL_PATH: str = os.getenv('MODEL_PATH', 'llm_server/models/gemma-2b-it.Q4_K_M.gguf')
+
     @property
     def mongo_url(self) -> str:
         """Construct MongoDB connection URL"""

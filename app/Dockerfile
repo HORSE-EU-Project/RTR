@@ -14,11 +14,11 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . ./app/
 COPY ../config/ ./config/
 COPY ../ansible_playbooks/ ./ansible_playbooks/
-COPY ../models/ ./models/
+COPY ../llm_server/models/ ./llm_server/models/
 COPY ../.env ./
 
 # Create necessary directories
-RUN mkdir -p /app/models
+RUN mkdir -p /app/llm_server/models
 
 # Expose the port that the FastAPI application will run on
 EXPOSE 8000
