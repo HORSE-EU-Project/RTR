@@ -30,6 +30,12 @@ var/
 *.egg
 
 # Models (GGUF files are large)
+# Models & checkpoints
+/llm_server/models/
+*.gguf
+*.pt
+*.bin
+*.safetensors
 models/
 models/*.gguf
 models/*.bin
