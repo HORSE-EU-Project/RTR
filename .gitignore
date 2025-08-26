@@ -30,6 +30,7 @@ var/
 *.egg
 
 # Models (GGUF files are large)
+models/*
 models/*.gguf
 models/*.bin
 models/*.safetensors
