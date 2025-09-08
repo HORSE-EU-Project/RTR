@@ -18,7 +18,11 @@ import threading
 load_dotenv(find_dotenv())
 
 # Initialize FastAPI and CORS settings
-rtr_api = FastAPI()
+rtr_api = FastAPI(
+    title="RTR API",
+    version="1.0.0",
+    description="Reliability, Trustworthiness & Resilience Framework API",
+)
 rtr_api.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
