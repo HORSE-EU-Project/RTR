@@ -130,12 +130,17 @@ def register_new_action(
                 mitigation_actions[intent_id]["info"] = "Playbook created, forwarding to ePEM in background"
                 
                 # Start a background thread to handle the upload
-                background_thread = threading.Thread(
-                    target=run_in_background,
-                    args=(playbook, playbook_txt, intent_id)
-                )
-                background_thread.daemon = True  # Set as daemon so it doesn't block server shutdown
-                background_thread.start()
+                # background_thread = threading.Thread(
+                #     target=run_in_background,
+                #     args=(playbook, playbook_txt, intent_id)
+                # )
+                # background_thread.daemon = True  # Set as daemon so it doesn't block server shutdown
+                # background_thread.start()
+                
+                # Send the mitigation action to ePEM with a synchronous call
+                playbook.simple_uploader(playbook_txt)
+                mitigation_actions[intent_id]["status"] += ", " + playbook.mitigation_action.status
+                mitigation_actions[intent_id]["info"] += ", " + playbook.mitigation_action.info 
                 
             else:
                 # No matching playbook found - use the detailed error message from playbook_creator

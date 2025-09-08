@@ -191,50 +191,103 @@ class playbook_creator:
         function_url = "/v2/horse/rtr_request"
         api_url = api_url + function_url
         
-        # Set up the query parameters required by the API
-        params = {
-            "target_ip": self.mitigation_action.mitigation_host,  # Already has default "0.0.0.0"
-            "target_port": "22",  # Default SSH port for Ansible
-            "service": "DNS",
-            "actionType": self.action_type,
-            "actionID": self.mitigation_action.intent_id  # Required field
+        # Build the JSON payload according to the expected schema
+        payload = {
+            "command": self.mitigation_action.command,
+            "intent_type": self.mitigation_action.intent_type,
+            "intent_id": self.mitigation_action.intent_id,
+            "threat": self.mitigation_action.threat,
+            "target_domain": self.mitigation_action.target_domain,
+            "action": self.mitigation_action.action,
+            "attacked_host": self.mitigation_action.attacked_host,
+            "mitigation_host": self.mitigation_action.mitigation_host,
+            "duration": self.mitigation_action.duration,
+            "status": self.mitigation_action.status,
+            "info": self.mitigation_action.info,
+            "ansible_command": playbook_text
         }
-        
-        # Set up the headers
+
         headers = {
-            "Content-Type": "application/yaml"
+            "Content-Type": "application/json"
         }
-        
-        print(f"Sending playbook to endpoint: {api_url}")
-        print(f"With parameters: {params}")
-        
+
+        print(f"Sending request to endpoint: {api_url}")
+        print(f"Payload: {payload}")
+
         try:
-            # Send the request to the API
+            # Send the request to the API with JSON payload
             response = requests.post(
                 api_url,
-                params=params,
                 headers=headers,
-                data=playbook_text
+                json=payload
             )
-            
-            # Check if the request was successful
+
+            # Handle different response status codes with concise information
             if response.status_code == 200:
                 print("Upload completed successfully!")
                 print(response.text)
-                
-                # Update mitigation action status and info
+
+                # Update mitigation action status and info for success
                 self.mitigation_action.status = "sent_to_epem"
-                self.mitigation_action.info = f"Action successfully transformed and sent to ePEM. Response: {response.text[:100]}..."
+                self.mitigation_action.info = f"Sent to ePEM → ePEM sent to DOC → DOC successfully enforced action"
                 return True
-            else:
-                print(f"Request failed with status code: {response.status_code}")
-                print(f"Response: {response.text if hasattr(response, 'text') else 'No response text'}")
-                
-                # Update mitigation action status and info for failure
-                self.mitigation_action.status = "epem_forward_failed"
-                self.mitigation_action.info = f"Failed to forward to ePEM endpoint. Status code: {response.status_code}. Response: {response.text[:100] if hasattr(response, 'text') else 'No response'}"
+            elif response.status_code == 201:
+                print("Action created successfully at ePEM!")
+                print(response.text)
+
+                # Update mitigation action status and info for created
+                self.mitigation_action.status = "sent_to_epem"
+                self.mitigation_action.info = f"Sent to ePEM → ePEM created action → DOC processing enforcement"
+                return True
+            elif response.status_code == 202:
+                print("Action accepted by ePEM for processing!")
+                print(response.text)
+
+                # Update mitigation action status and info for accepted
+                self.mitigation_action.status = "sent_to_epem"
+                self.mitigation_action.info = f"Sent to ePEM → ePEM accepted and queued → Waiting for DOC enforcement"
+                return True
+            elif response.status_code == 400:
+                print(f"Bad request - invalid payload: {response.status_code}")
+                print(f"Response: {response.text}")
+
+                # Update mitigation action status and info for bad request
+                self.mitigation_action.status = "sent_to_epem"
+                self.mitigation_action.info = f"Sent to ePEM → ePEM rejected (400 Bad Request) → DOC enforcement failed"
                 return False
-                
+            elif response.status_code == 401:
+                print(f"Unauthorized request: {response.status_code}")
+                print(f"Response: {response.text}")
+
+                # Update mitigation action status and info for unauthorized
+                self.mitigation_action.status = "sent_to_epem"
+                self.mitigation_action.info = f"Sent to ePEM → ePEM rejected (401 Unauthorized) → DOC enforcement failed"
+                return False
+            elif response.status_code == 404:
+                print(f"ePEM endpoint not found: {response.status_code}")
+                print(f"Response: {response.text}")
+
+                # Update mitigation action status and info for not found
+                self.mitigation_action.status = "sent_to_epem"
+                self.mitigation_action.info = f"Sent to ePEM → ePEM endpoint not found (404) → DOC enforcement failed ({response.text})"
+                return False
+            elif response.status_code >= 500:
+                print(f"ePEM server error: {response.status_code}")
+                print(f"Response: {response.text}")
+
+                # Update mitigation action status and info for server error
+                self.mitigation_action.status = "sent_to_epem"
+                self.mitigation_action.info = f"Sent to ePEM → ePEM server error ({response.status_code}) → DOC enforcement failed ({response.text})"
+                return False
+            else:
+                print(f"Unexpected response status code: {response.status_code}")
+                print(f"Response: {response.text}")
+
+                # Update mitigation action status and info for other failures
+                self.mitigation_action.status = "sent_to_epem"
+                self.mitigation_action.info = f"Sent to ePEM → ePEM unexpected response ({response.status_code}) → DOC enforcement failed ({response.text})"
+                return False
+
         except Exception as e:
             print(f"An error occurred: {str(e)}")
             
@@ -242,6 +295,7 @@ class playbook_creator:
             self.mitigation_action.status = "epem_request_error"
             self.mitigation_action.info = f"Error when communicating with ePEM: {str(e)}"
             return False
+
 
 
 if __name__ == "__main__":
