@@ -9,7 +9,7 @@ class mitigation_action_model(BaseModel):
     intent_type: str = Field(..., example="mitigation")
     intent_id: str = Field(..., example="ABC124")  # Made intent_id required (not optional)
     threat: str = Field(default="", example="ddos")
-    target_domain: str = Field(default="", example="example.com")
+    target_domain: str = Field(default="", example="UPC/CNIT/UMU")
     # Changed to Union[str, Dict[str, Any]] to accept either a string or a structured object
     action: Union[str, Dict[str, Any]] = Field(..., example=
         "Can use a string like 'rate limit DNS server at ip 10.10.2.1 at port 123, for 20 requests per second' "

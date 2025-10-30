@@ -63,7 +63,11 @@ class playbook_creator:
             "DNS_SERVICE_DISABLE": "dns_service_disable.yaml",
             "DNS_SERVICE_HANDOVER": "dns_service_handover.yaml",
             "DNS_FIREWALL_SPOOFING_DETECTION": "dns_firewall_spoofing_detection.yaml",
-            "TEST_2": "test_2.yaml"
+            "TEST_2": "test_2.yaml",
+            
+            #Demo_0 mitigation type block_pod_address
+            "BLOCK_POD_ADDRESS": "dns_rate_limiting.yaml"
+
         }
         
         # If we have a direct mapping, return it immediately
@@ -130,45 +134,68 @@ class playbook_creator:
         variables = self.extract_variables_from_yaml(os.path.join("ansible_playbooks", self.chosen_playbook))
         playbook_variables_dict = {}
 
-        # Loops through the variables and replaces them with the actual values
+        # Loops through the variables and replaces them with actual values.
+        # Provide compact, sensible defaults for any missing variables.
+        defaults = {
+            'mitigation_host': getattr(self.mitigation_action, 'mitigation_host', '0.0.0.0') or '0.0.0.0',
+            'target_domain': getattr(self.mitigation_action, 'target_domain', 'unknown') or 'unknown',
+            'rate': '1',
+            'requests_per_sec': '1/second',
+            'duration': '0',
+            'protocol': 'tcp',
+            'ipv4_and_subnet': '0.0.0.0/32',
+            'interface_name': 'eth0',
+            'port': '53'
+        }
+
+        def _get_field(name):
+            if isinstance(self.mitigation_action.action, dict):
+                return self.mitigation_action.action.get('fields', {}).get(name)
+            return None
+
         for variable in variables:
+            # Direct substitutions with priority: explicit attribute -> action.fields -> regex/string -> default
             if variable == 'mitigation_host':
-                playbook_variables_dict['mitigation_host'] = self.mitigation_action.mitigation_host
+                playbook_variables_dict['mitigation_host'] = getattr(self.mitigation_action, 'mitigation_host', None) or defaults['mitigation_host']
                 continue
-            
-            if variable == 'target_domain' and self.mitigation_action.target_domain:
-                # Use target_domain from the main model if available
-                playbook_variables_dict['target_domain'] = self.mitigation_action.target_domain
+
+            if variable == 'target_domain':
+                playbook_variables_dict['target_domain'] = (
+                    getattr(self.mitigation_action, 'target_domain', None)
+                    or _get_field('target_domain')
+                    or defaults['target_domain']
+                )
                 continue
-            
-            # Check if action is a string or dictionary
+
             if isinstance(self.mitigation_action.action, str):
-                # Original string-based processing with regex
+                # Try regex extraction first, then fall back to default
                 variable_value = re.findall(regex_patterns.get(variable, r''), self.mitigation_action.action)
-                playbook_variables_dict[variable] = variable_value[0] if variable_value else "UNKNOWN_VALUE"
+                playbook_variables_dict[variable] = variable_value[0] if variable_value else defaults.get(variable, 'UNKNOWN_VALUE')
             else:
-                # Dictionary-based processing - extract from fields
-                fields = self.mitigation_action.action.get("fields", {})
-                
-                # Map playbook variables to action fields
-                if variable == 'rate' and 'rate' in fields:
-                    playbook_variables_dict[variable] = str(fields['rate'])
-                elif variable == 'requests_per_sec' and 'rate' in fields:
-                    playbook_variables_dict[variable] = f"{fields['rate']}/s"
-                elif variable == 'duration' and 'duration' in fields:
-                    playbook_variables_dict[variable] = str(fields['duration'])
-                elif variable == 'target_domain' and 'target_domain' in fields:
-                    playbook_variables_dict[variable] = fields['target_domain']
-                elif variable == 'protocol' and 'protocol' in fields:
-                    playbook_variables_dict[variable] = fields['protocol']
-                elif variable == 'ipv4_and_subnet' and 'ip_range' in fields:
-                    playbook_variables_dict[variable] = fields['ip_range']
-                elif variable == 'interface_name' and 'interface' in fields:
-                    playbook_variables_dict[variable] = fields['interface']
-                elif variable == 'port' and 'port' in fields:
-                    playbook_variables_dict[variable] = str(fields['port'])
+                # Dictionary-based processing - extract from fields with defaults
+                if variable == 'rate':
+                    v = _get_field('rate')
+                    playbook_variables_dict[variable] = str(v) if v is not None else defaults['rate']
+                elif variable == 'requests_per_sec':
+                    v = _get_field('rate')
+                    playbook_variables_dict[variable] = f"{v}/second" if v is not None else defaults['requests_per_sec']
+                elif variable == 'duration':
+                    v = _get_field('duration')
+                    playbook_variables_dict[variable] = str(v) if v is not None else defaults['duration']
+                elif variable == 'protocol':
+                    v = _get_field('protocol')
+                    playbook_variables_dict[variable] = v if v is not None else defaults['protocol']
+                elif variable == 'ipv4_and_subnet':
+                    v = _get_field('ip_range')
+                    playbook_variables_dict[variable] = v if v is not None else defaults['ipv4_and_subnet']
+                elif variable == 'interface_name':
+                    v = _get_field('interface')
+                    playbook_variables_dict[variable] = v if v is not None else defaults['interface_name']
+                elif variable == 'port':
+                    v = _get_field('port')
+                    playbook_variables_dict[variable] = str(v) if v is not None else defaults['port']
                 else:
-                    playbook_variables_dict[variable] = "UNKNOWN_VALUE"
+                    playbook_variables_dict[variable] = defaults.get(variable, 'UNKNOWN_VALUE')
 
         # Using the jinja2 library, the variables are replaced with the actual values
         env = Environment(loader=FileSystemLoader('ansible_playbooks'))
