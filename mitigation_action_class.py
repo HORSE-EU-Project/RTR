@@ -34,14 +34,10 @@ class mitigation_action_model(BaseModel):
         """
         action = values.get('action')
         if isinstance(action, dict):
-            # Normalize top-level action name
-            if action.get('name') == 'block_pod_address':
-                action['name'] = 'block_ip_addresses'
-
-            # Normalize field-level name if present
+            # Check field-level name and translate from 'block_ip_address' -> 'block_pod_address'
             fields = action.get('fields')
-            if isinstance(fields, dict) and fields.get('name') == 'block_pod_address':
-                fields['name'] = 'block_ip_addresses'
+            if isinstance(fields, dict) and fields.get('name') == 'block_ip_address':
+                fields['name'] = 'block_pod_address'
 
             # write back the possibly-updated action
             values['action'] = action
