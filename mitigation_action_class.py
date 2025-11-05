@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 from typing import Optional, Literal, Dict, Any, List, Union
 
 
@@ -23,6 +23,56 @@ class mitigation_action_model(BaseModel):
     status: str = Field(default="pending", example="completed", description="Current status of the mitigation action")
     info: str = Field(default="to be enforced", example="Action successfully executed", description="Additional information about the action status")
     ansible_command: str = Field(default="", example="- hosts: [172.16.2.1]\n  tasks:\n...", description="The generated Ansible playbook command")
+
+    @model_validator(mode='before')
+    def normalize_action_name(cls, values):
+        """Translate legacy action names in the incoming payload.
+
+        If incoming `action` is a dict and contains a name of
+        'block_pod_address' (either at action['name'] or action['fields']['name']),
+        translate it to 'block_ip_addresses' before validation.
+        """
+        action = values.get('action')
+        if isinstance(action, dict):
+            # Normalize top-level action name
+            if action.get('name') == 'block_pod_address':
+                action['name'] = 'block_ip_addresses'
+
+            # Normalize field-level name if present
+            fields = action.get('fields')
+            if isinstance(fields, dict) and fields.get('name') == 'block_pod_address':
+                fields['name'] = 'block_ip_addresses'
+
+            # write back the possibly-updated action
+            values['action'] = action
+
+        return values
+
+    @model_validator(mode='after')
+    def set_mitigation_host_and_duration_from_action(self):
+        mit_host = getattr(self, 'mitigation_host', None)
+        action = getattr(self, 'action', None)
+        duration = getattr(self, 'duration', None)
+
+        # Treat empty string or default placeholder as not set
+        if mit_host in (None, '', '0.0.0.0'): 
+            if isinstance(action, dict):
+                fields = action.get('fields', {}) or {}
+                # keys to check in order of preference
+                for key in ('blocked_pod', 'pod', 'mitigation_host', 'source_ip_filter', 'dns_servers'):
+                    if key in fields and fields[key]:
+                        # coerce to string to match field type
+                        self.mitigation_host = str(fields[key])
+                        break
+        if duration in (None, 0):
+            if isinstance(action, dict):
+                fields = action.get('fields', {}) or {}
+                # keys to check in order of preference
+                for key in ('duration', 'timeout'):
+                    if key in fields and fields[key]:
+                        self.duration = int(fields[key])
+                        break
+        return self
 
     class Config:
         schema_extra = {
