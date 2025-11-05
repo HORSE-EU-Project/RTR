@@ -24,25 +24,25 @@ class mitigation_action_model(BaseModel):
     info: str = Field(default="to be enforced", example="Action successfully executed", description="Additional information about the action status")
     ansible_command: str = Field(default="", example="- hosts: [172.16.2.1]\n  tasks:\n...", description="The generated Ansible playbook command")
 
-    @model_validator(mode='before')
-    def normalize_action_name(cls, values):
-        """Translate legacy action names in the incoming payload.
+    # @model_validator(mode='before')
+    # def normalize_action_name(cls, values):
+    #     """Translate legacy action names in the incoming payload.
 
-        If incoming `action` is a dict and contains a name of
-        'block_pod_address' (either at action['name'] or action['fields']['name']),
-        translate it to 'block_ip_addresses' before validation.
-        """
-        action = values.get('action')
-        if isinstance(action, dict):
-            # Check field-level name and translate from 'block_ip_address' -> 'block_pod_address'
-            fields = action.get('fields')
-            if isinstance(fields, dict) and fields.get('name') == 'block_ip_address':
-                fields['name'] = 'block_pod_address'
+    #     If incoming `action` is a dict and contains a name of
+    #     'block_pod_address' (either at action['name'] or action['fields']['name']),
+    #     translate it to 'block_ip_addresses' before validation.
+    #     """
+    #     action = values.get('action')
+    #     if isinstance(action, dict):
+    #         # Check field-level name and translate from 'block_ip_address' -> 'block_pod_address'
+    #         fields = action.get('fields')
+    #         if isinstance(fields, dict) and fields.get('name') == 'block_ip_address':
+    #             fields['name'] = 'block_pod_addresses'
 
-            # write back the possibly-updated action
-            values['action'] = action
+    #         # write back the possibly-updated action
+    #         values['action'] = action
 
-        return values
+    #     return values
 
     @model_validator(mode='after')
     def set_mitigation_host_and_duration_from_action(self):

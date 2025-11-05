@@ -68,7 +68,7 @@ class playbook_creator:
             #Demo_0 mitigation type block_pod_address
             #"BLOCK_POD_ADDRESS": "dns_rate_limiting.yaml"
             "BLOCK_POD_ADDRESS": "block_pod_address.yaml",
-
+            "BLOCK_POD_ADDRESSES": "block_pod_address.yaml",
             "BLOCK_IP_ADDRESSES": "block_pod_address.yaml"
 
         }
