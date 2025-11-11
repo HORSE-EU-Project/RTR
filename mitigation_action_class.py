@@ -49,6 +49,7 @@ class mitigation_action_model(BaseModel):
         mit_host = getattr(self, 'mitigation_host', None)
         action = getattr(self, 'action', None)
         duration = getattr(self, 'duration', None)
+        domain = getattr(self, 'domains', None)
 
         # Treat empty string or default placeholder as not set
         if mit_host in (None, '', '0.0.0.0'): 
@@ -68,6 +69,15 @@ class mitigation_action_model(BaseModel):
                     if key in fields and fields[key]:
                         self.duration = int(fields[key])
                         break
+        if domain in (None, '', []):
+            if isinstance(action, dict):
+                fields = action.get('fields', {}) or {}
+                # keys to check in order of preference
+                for key in ('target_domain', 'domains'):
+                    if key in fields and fields[key]:
+                        self.target_domain = fields[key]
+                        break
+        
         return self
 
     class Config:
