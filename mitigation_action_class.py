@@ -44,6 +44,36 @@ class mitigation_action_model(BaseModel):
 
     #     return values
 
+    @model_validator(mode='before')
+    def normalize_blocked_pod_and_fields(cls, values):
+        """If incoming action indicates a pod-blocking operation, normalize fields:
+
+        - rename 'blocked_pod' -> 'blocked_ips'
+        - ensure blocked_ips value is a list (wrap single string into list)
+        This runs before validation so downstream logic sees normalized data.
+        """
+        action = values.get('action')
+        if isinstance(action, dict):
+            fields = action.get('fields') or {}
+
+            # If action name is 'block_pod_address', translate field 'blocked_pod' -> 'blocked_ips'
+            if action.get('name') == 'block_pod_address' and isinstance(fields, dict):
+                if 'blocked_pod' in fields:
+                    v = fields.pop('blocked_pod')
+                    if isinstance(v, str):
+                        v = [v]
+                    fields['blocked_ips'] = v
+
+            # If blocked_ips exists and is a string, convert to list
+            if isinstance(fields, dict) and 'blocked_ips' in fields and isinstance(fields['blocked_ips'], str):
+                fields['blocked_ips'] = [fields['blocked_ips']]
+
+            # write back
+            action['fields'] = fields
+            values['action'] = action
+
+        return values
+
     @model_validator(mode='after')
     def set_mitigation_host_and_duration_from_action(self):
         mit_host = getattr(self, 'mitigation_host', None)
