@@ -71,6 +71,11 @@ class playbook_creator:
             "BLOCK_POD_ADDRESSES": "block_pod_address.yaml",
             "BLOCK_IP_ADDRESSES": "block_pod_address.yaml",
             
+            #Demo_10 API rate limiting mitigation type
+            "API_RATE_LIMITING": "dns_rate_limiting.yaml",
+            "API_RATE_LIMIT": "dns_rate_limiting.yaml",
+            
+            
             #Multidomain demo mitigation type
             "BLOCK_UES_MULTIDOMAIN": "block_pod_address.yaml"
             
@@ -181,10 +186,10 @@ class playbook_creator:
             else:
                 # Dictionary-based processing - extract from fields with defaults
                 if variable == 'rate':
-                    v = _get_field('rate')
+                    v = _get_field('rate') or _get_field('limit')
                     playbook_variables_dict[variable] = str(v) if v is not None else defaults['rate']
                 elif variable == 'requests_per_sec':
-                    v = _get_field('rate')
+                    v = _get_field('rate') or _get_field('limit')
                     playbook_variables_dict[variable] = f"{v}/second" if v is not None else defaults['requests_per_sec']
                 elif variable == 'duration':
                     v = _get_field('duration')
