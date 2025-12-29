@@ -252,7 +252,7 @@ class playbook_creator:
         # Try ePEM first, then fallback to DOC if ePEM is unresponsive
         endpoints = [
             (self.epem_endpoint + "/v2/horse/rtr_request", "ePEM"),
-            (self.doc_endpoint + "/v2/horse/rtr_request", "DOC")
+            (self.doc_endpoint + "/api/mitigate", "DOC")
         ]
         
         for api_url, endpoint_name in endpoints:
