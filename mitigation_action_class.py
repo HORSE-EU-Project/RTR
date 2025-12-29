@@ -48,12 +48,19 @@ class mitigation_action_model(BaseModel):
     def normalize_blocked_pod_and_fields(cls, values):
         """Normalize incoming action payloads:
 
+        - Sync intent_id: if action['intent_id'] differs from top-level intent_id, use action['intent_id']
         - For 'block_pod_address': rename 'blocked_pod' -> 'blocked_ips' and ensure it's a list
         - For 'block_ues_multidomain': extract domains, populate mitigation_host (as list) and target_domain
         This runs before validation so downstream logic sees normalized data.
         """
         action = values.get('action')
         if isinstance(action, dict):
+            # Sync intent_id: if action has intent_id and it differs from top-level, use action's intent_id
+            action_intent_id = action.get('intent_id')
+            top_level_intent_id = values.get('intent_id')
+            if action_intent_id and action_intent_id != top_level_intent_id:
+                values['intent_id'] = action_intent_id
+            
             fields = action.get('fields') or {}
 
             # If action name is 'block_pod_address', translate field 'blocked_pod' -> 'blocked_ips'
