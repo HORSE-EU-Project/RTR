@@ -36,8 +36,12 @@ class playbook_creator:
         # Get the EPEM endpoint from environment variables
         # The .env file already includes the protocol, so we don't need to add it
         self.epem_endpoint = os.getenv('EPEM_ENDPOINT', 'http://httpbin.org/post')
+        
+        # Get the DOC endpoint from environment variables (fallback when ePEM is unresponsive)
+        self.doc_endpoint = os.getenv('DOC_ENDPOINT', 'http://192.168.130.62:8001')
             
         print(f"EPEM endpoint: {self.epem_endpoint}")
+        print(f"DOC endpoint (fallback): {self.doc_endpoint}")
         print(self.chosen_playbook)
 
     
@@ -225,11 +229,6 @@ class playbook_creator:
         return rendered_template
 
     def simple_uploader(self, playbook_text):
-        # Use the EPEM endpoint from the class initialization for the API URL
-        api_url = self.epem_endpoint
-        function_url = "/v2/horse/rtr_request"
-        api_url = api_url + function_url
-        
         # Build the JSON payload according to the expected schema
         payload = {
             "command": self.mitigation_action.command,
@@ -250,90 +249,133 @@ class playbook_creator:
             "Content-Type": "application/json"
         }
 
-        print(f"Sending request to endpoint: {api_url}")
-        print(f"Payload: {payload}")
+        # Try ePEM first, then fallback to DOC if ePEM is unresponsive
+        endpoints = [
+            (self.epem_endpoint + "/v2/horse/rtr_request", "ePEM"),
+            (self.doc_endpoint + "/v2/horse/rtr_request", "DOC")
+        ]
+        
+        for api_url, endpoint_name in endpoints:
+            print(f"Attempting to send request to {endpoint_name} endpoint: {api_url}")
+            print(f"Payload: {payload}")
 
-        try:
-            # Send the request to the API with JSON payload
-            response = requests.post(
-                api_url,
-                headers=headers,
-                json=payload
-            )
+            try:
+                # Send the request to the API with JSON payload and timeout
+                response = requests.post(
+                    api_url,
+                    headers=headers,
+                    json=payload,
+                    timeout=10  # 10 second timeout for connection
+                )
 
-            # Handle different response status codes with concise information
-            if response.status_code == 200:
-                print("Upload completed successfully!")
-                print(response.text)
+                # Handle different response status codes with concise information
+                if response.status_code == 200:
+                    print(f"Upload completed successfully to {endpoint_name}!")
+                    print(response.text)
 
-                # Update mitigation action status and info for success
-                self.mitigation_action.status = "sent_to_epem"
-                self.mitigation_action.info = f"Sent to ePEM → ePEM sent to DOC → DOC successfully enforced action"
-                return True
-            elif response.status_code == 201:
-                print("Action created successfully at ePEM!")
-                print(response.text)
+                    # Update mitigation action status and info for success
+                    self.mitigation_action.status = f"sent_to_{endpoint_name.lower()}"
+                    self.mitigation_action.info = f"Sent to {endpoint_name} → {endpoint_name} sent to DOC → DOC successfully enforced action"
+                    return True
+                elif response.status_code == 201:
+                    print(f"Action created successfully at {endpoint_name}!")
+                    print(response.text)
 
-                # Update mitigation action status and info for created
-                self.mitigation_action.status = "sent_to_epem"
-                self.mitigation_action.info = f"Sent to ePEM → ePEM created action → DOC processing enforcement"
-                return True
-            elif response.status_code == 202:
-                print("Action accepted by ePEM for processing!")
-                print(response.text)
+                    # Update mitigation action status and info for created
+                    self.mitigation_action.status = f"sent_to_{endpoint_name.lower()}"
+                    self.mitigation_action.info = f"Sent to {endpoint_name} → {endpoint_name} created action → DOC processing enforcement"
+                    return True
+                elif response.status_code == 202:
+                    print(f"Action accepted by {endpoint_name} for processing!")
+                    print(response.text)
 
-                # Update mitigation action status and info for accepted
-                self.mitigation_action.status = "sent_to_epem"
-                self.mitigation_action.info = f"Sent to ePEM → ePEM accepted and queued → Waiting for DOC enforcement"
-                return True
-            elif response.status_code == 400:
-                print(f"Bad request - invalid payload: {response.status_code}")
-                print(f"Response: {response.text}")
+                    # Update mitigation action status and info for accepted
+                    self.mitigation_action.status = f"sent_to_{endpoint_name.lower()}"
+                    self.mitigation_action.info = f"Sent to {endpoint_name} → {endpoint_name} accepted and queued → Waiting for DOC enforcement"
+                    return True
+                elif response.status_code == 400:
+                    print(f"Bad request to {endpoint_name} - invalid payload: {response.status_code}")
+                    print(f"Response: {response.text}")
+                    # Don't return False yet, try next endpoint
+                    if endpoint_name == "DOC":
+                        self.mitigation_action.status = f"sent_to_{endpoint_name.lower()}"
+                        self.mitigation_action.info = f"Sent to {endpoint_name} → {endpoint_name} rejected (400 Bad Request) → DOC enforcement failed"
+                        return False
+                    continue  # Try next endpoint
+                elif response.status_code == 401:
+                    print(f"Unauthorized request to {endpoint_name}: {response.status_code}")
+                    print(f"Response: {response.text}")
+                    # Don't return False yet, try next endpoint
+                    if endpoint_name == "DOC":
+                        self.mitigation_action.status = f"sent_to_{endpoint_name.lower()}"
+                        self.mitigation_action.info = f"Sent to {endpoint_name} → {endpoint_name} rejected (401 Unauthorized) → DOC enforcement failed"
+                        return False
+                    continue  # Try next endpoint
+                elif response.status_code == 404:
+                    print(f"{endpoint_name} endpoint not found: {response.status_code}")
+                    print(f"Response: {response.text}")
+                    # Don't return False yet, try next endpoint
+                    if endpoint_name == "DOC":
+                        self.mitigation_action.status = f"sent_to_{endpoint_name.lower()}"
+                        self.mitigation_action.info = f"Sent to {endpoint_name} → {endpoint_name} endpoint not found (404) → DOC enforcement failed ({response.text})"
+                        return False
+                    continue  # Try next endpoint
+                elif response.status_code >= 500:
+                    print(f"{endpoint_name} server error: {response.status_code}")
+                    print(f"Response: {response.text}")
+                    # Don't return False yet, try next endpoint
+                    if endpoint_name == "DOC":
+                        self.mitigation_action.status = f"sent_to_{endpoint_name.lower()}"
+                        self.mitigation_action.info = f"Sent to {endpoint_name} → {endpoint_name} server error ({response.status_code}) → DOC enforcement failed ({response.text})"
+                        return False
+                    continue  # Try next endpoint
+                else:
+                    print(f"Unexpected response status code from {endpoint_name}: {response.status_code}")
+                    print(f"Response: {response.text}")
+                    # Don't return False yet, try next endpoint
+                    if endpoint_name == "DOC":
+                        self.mitigation_action.status = f"sent_to_{endpoint_name.lower()}"
+                        self.mitigation_action.info = f"Sent to {endpoint_name} → {endpoint_name} unexpected response ({response.status_code}) → DOC enforcement failed ({response.text})"
+                        return False
+                    continue  # Try next endpoint
 
-                # Update mitigation action status and info for bad request
-                self.mitigation_action.status = "sent_to_epem"
-                self.mitigation_action.info = f"Sent to ePEM → ePEM rejected (400 Bad Request) → DOC enforcement failed"
-                return False
-            elif response.status_code == 401:
-                print(f"Unauthorized request: {response.status_code}")
-                print(f"Response: {response.text}")
-
-                # Update mitigation action status and info for unauthorized
-                self.mitigation_action.status = "sent_to_epem"
-                self.mitigation_action.info = f"Sent to ePEM → ePEM rejected (401 Unauthorized) → DOC enforcement failed"
-                return False
-            elif response.status_code == 404:
-                print(f"ePEM endpoint not found: {response.status_code}")
-                print(f"Response: {response.text}")
-
-                # Update mitigation action status and info for not found
-                self.mitigation_action.status = "sent_to_epem"
-                self.mitigation_action.info = f"Sent to ePEM → ePEM endpoint not found (404) → DOC enforcement failed ({response.text})"
-                return False
-            elif response.status_code >= 500:
-                print(f"ePEM server error: {response.status_code}")
-                print(f"Response: {response.text}")
-
-                # Update mitigation action status and info for server error
-                self.mitigation_action.status = "sent_to_epem"
-                self.mitigation_action.info = f"Sent to ePEM → ePEM server error ({response.status_code}) → DOC enforcement failed ({response.text})"
-                return False
-            else:
-                print(f"Unexpected response status code: {response.status_code}")
-                print(f"Response: {response.text}")
-
-                # Update mitigation action status and info for other failures
-                self.mitigation_action.status = "sent_to_epem"
-                self.mitigation_action.info = f"Sent to ePEM → ePEM unexpected response ({response.status_code}) → DOC enforcement failed ({response.text})"
-                return False
-
-        except Exception as e:
-            print(f"An error occurred: {str(e)}")
-            
-            # Update mitigation action status and info for error
-            self.mitigation_action.status = "epem_request_error"
-            self.mitigation_action.info = f"Error when communicating with ePEM: {str(e)}"
-            return False
+            except requests.exceptions.Timeout:
+                print(f"Timeout when connecting to {endpoint_name}")
+                # If this is the last endpoint (DOC), update status and return False
+                if endpoint_name == "DOC":
+                    self.mitigation_action.status = "all_endpoints_failed"
+                    self.mitigation_action.info = f"ePEM unresponsive (timeout) → Tried DOC fallback but also timed out"
+                    return False
+                # Otherwise, continue to next endpoint
+                print(f"Trying fallback to DOC...")
+                continue
+                
+            except requests.exceptions.ConnectionError:
+                print(f"Connection error when connecting to {endpoint_name}")
+                # If this is the last endpoint (DOC), update status and return False
+                if endpoint_name == "DOC":
+                    self.mitigation_action.status = "all_endpoints_failed"
+                    self.mitigation_action.info = f"ePEM unresponsive (connection error) → Tried DOC fallback but also failed to connect"
+                    return False
+                # Otherwise, continue to next endpoint
+                print(f"Trying fallback to DOC...")
+                continue
+                
+            except Exception as e:
+                print(f"An error occurred when connecting to {endpoint_name}: {str(e)}")
+                # If this is the last endpoint (DOC), update status and return False
+                if endpoint_name == "DOC":
+                    self.mitigation_action.status = "all_endpoints_failed"
+                    self.mitigation_action.info = f"ePEM unresponsive ({str(e)}) → Tried DOC fallback but also failed: {str(e)}"
+                    return False
+                # Otherwise, continue to next endpoint
+                print(f"Trying fallback to DOC...")
+                continue
+        
+        # If we get here, all endpoints failed
+        self.mitigation_action.status = "all_endpoints_failed"
+        self.mitigation_action.info = "Failed to send action to both ePEM and DOC endpoints"
+        return False
 
 
 
