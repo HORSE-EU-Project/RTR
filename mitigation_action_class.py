@@ -79,8 +79,7 @@ class mitigation_action_model(BaseModel):
                     if values.get('mitigation_host') in (None, '0.0.0.0', ''):
                         values['mitigation_host'] = domains
                     # Populate target_domain with the domains list (if not already set)
-                    if values.get('target_domain') in (None, ''):
-                        values['target_domain'] = domains
+                    values['target_domain'] = domains
 
             # write back
             action['fields'] = fields
