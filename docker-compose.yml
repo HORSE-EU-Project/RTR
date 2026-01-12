@@ -8,7 +8,8 @@ services:
     environment:
       - MONGODB_PORT=${MONGODB_PORT}
       - MONGODB_HOST=mongodb
-      - EPEM_ENDPOINT=${EPEM_ENDPOINT}
+      - EPEM_CNIT=${EPEM_CNIT}
+      - EPEM_UPC=${EPEM_UPC}
       - DOC_CNIT=${DOC_CNIT}
       - DOC_UPC=${DOC_UPC}
       - CURRENT_DOMAIN=${CURRENT_DOMAIN}
