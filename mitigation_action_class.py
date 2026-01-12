@@ -62,9 +62,6 @@ class mitigation_action_model(BaseModel):
                     # Ensure domains is a list
                     if isinstance(domains, str):
                         domains = [domains]
-                    # Populate mitigation_host with the domains list (if not already set)
-                    if values.get('mitigation_host') in (None, '0.0.0.0', ''):
-                        values['mitigation_host'] = domains
                     # Populate target_domain with the domains list (if not already set)
                     values['target_domain'] = domains
 

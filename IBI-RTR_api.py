@@ -13,6 +13,9 @@ import os
 import uuid
 import asyncio
 import threading
+import requests
+import re
+from urllib.parse import urlparse
 
 # Load environment variables
 load_dotenv(find_dotenv())
@@ -43,6 +46,71 @@ users_collection = db["users"]  # Define users collection
 
 # In-memory storage for mitigation actions
 mitigation_actions: Dict[str, dict] = {}
+
+def configure_epem_doc_endpoint():
+    """Configure ePEM with the DOC IP and port during startup"""
+    try:
+        # Get the current domain and determine which ePEM endpoint to configure
+        current_domain = os.getenv('CURRENT_DOMAIN', 'CNIT').upper()
+        
+        if current_domain == 'CNIT':
+            epem_endpoint = os.getenv('EPEM_CNIT', 'http://192.168.130.233:5002')
+            doc_endpoint = os.getenv('DOC_CNIT', 'http://192.168.130.62:8001')
+        elif current_domain == 'UPC':
+            epem_endpoint = os.getenv('EPEM_UPC', 'http://10.19.2.20:5002')
+            doc_endpoint = os.getenv('DOC_UPC', 'http://10.19.2.19:8001')
+        else:
+            epem_endpoint = os.getenv('EPEM_CNIT', 'http://192.168.130.233:5002')
+            doc_endpoint = os.getenv('DOC_CNIT', 'http://192.168.130.62:8001')
+        
+        # Parse the DOC endpoint to extract IP and port
+        parsed_url = urlparse(doc_endpoint)
+        doc_ip = parsed_url.hostname
+        doc_port = parsed_url.port or (443 if parsed_url.scheme == 'https' else 80)
+        doc_path = parsed_url.path or '/api/mitigate'
+        
+        # Ensure doc_path starts with /
+        if not doc_path.startswith('/'):
+            doc_path = '/' + doc_path
+        
+        print(f"🔧 Configuring ePEM at {epem_endpoint} with DOC endpoint...")
+        print(f"   DOC IP: {doc_ip}, DOC Port: {doc_port}, DOC Path: {doc_path}")
+        
+        # Send the configuration to ePEM
+        config_url = f"{epem_endpoint}/v2/horse/set_doc_ip_port"
+        params = {
+            'doc_ip': doc_ip,
+            'doc_port': doc_port,
+            'path': doc_path
+        }
+        
+        response = requests.post(config_url, params=params, timeout=5)
+        
+        if response.status_code == 200:
+            print(f"✅ ePEM configured successfully with DOC endpoint")
+            print(f"   Response: {response.text}")
+            return True
+        else:
+            print(f"⚠️ ePEM configuration returned status {response.status_code}")
+            print(f"   Response: {response.text}")
+            return False
+            
+    except requests.exceptions.Timeout:
+        print(f"⚠️ Timeout when trying to configure ePEM - continuing anyway")
+        return False
+    except requests.exceptions.ConnectionError:
+        print(f"⚠️ Connection error when trying to configure ePEM - ePEM may not be running yet")
+        return False
+    except Exception as e:
+        print(f"⚠️ Error configuring ePEM: {str(e)}")
+        return False
+
+@rtr_api.on_event("startup")
+async def startup_event():
+    """Run configuration tasks when the application starts"""
+    print("🚀 RTR API starting up...")
+    configure_epem_doc_endpoint()
+    print("✨ RTR API startup complete")
 
 @rtr_api.get("/")
 def root():

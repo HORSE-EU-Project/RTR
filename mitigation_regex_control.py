@@ -36,7 +36,7 @@ class playbook_creator:
         # Get the EPEM endpoint based on the current domain
         current_domain = os.getenv('CURRENT_DOMAIN', 'CNIT').upper()
         if current_domain == 'CNIT':
-            self.epem_endpoint = os.getenv('EPEM_CNIT', 'http://192.168.130.94:5002')
+            self.epem_endpoint = os.getenv('EPEM_CNIT', 'http://192.168.130.233:5002')
         elif current_domain == 'UPC':
             self.epem_endpoint = os.getenv('EPEM_UPC', 'http://10.19.2.20:5002')
         else:
@@ -269,7 +269,7 @@ class playbook_creator:
             (self.epem_endpoint + "/v2/horse/rtr_request", "ePEM"),
             (self.doc_endpoint + "/api/mitigate", "DOC")
         ]
-        if isinstance(target_domain, list) and len(target_domain) > 2:
+        if isinstance(target_domain, list) and len(target_domain) > 1:
             print(f"Multidomain mitigation action detected for domains: {target_domain}")
             # Here we could modify the endpoint or payload if needed for multidomain handling
             # For now, we just log it.
@@ -278,13 +278,24 @@ class playbook_creator:
                 #if domain equals to current domain, skip adding extra endpoint
                 if domain.upper() == os.getenv('CURRENT_DOMAIN', 'CNIT').upper():
                     continue
-                endpoints.append((os.getenv(f'DOC_{domain}', 'http://192.168.130.62:8001')+"/api/mitigate", f"DOC_{domain}"))
+                endpoints.append((os.getenv(f'DOC_{domain}', 'http://10.19.2.19:8001')+"/api/mitigate", f"DOC_{domain}"))
         
         
         for api_url, endpoint_name in endpoints:
+            
+
+            #Fit target domain to be a string with the name of the domain that is currently being sent to
+            if isinstance(target_domain, list) and len(target_domain) > 1:
+                # If endpoint is ePEM or DOC, use current domain; otherwise extract domain from endpoint name
+                if endpoint_name in ["ePEM", "DOC"]:
+                    payload['target_domain'] = os.getenv('CURRENT_DOMAIN', 'CNIT').upper()
+                else:
+                    payload['target_domain'] = endpoint_name.replace("DOC_", "")
+                print(f"Adjusted target_domain for payload to: {payload['target_domain']}")
+            
             print(f"Attempting to send request to {endpoint_name} endpoint: {api_url}")
             print(f"Payload: {payload}")
-
+            
             try:
                 # Send the request to the API with JSON payload and timeout
                 response = requests.post(
@@ -300,77 +311,86 @@ class playbook_creator:
                     print(response.text)
 
                     # Update mitigation action status and info for success
+                    domain_info = f" (in {endpoint_name.replace('DOC_', '')} domain)" if endpoint_name.startswith("DOC_") else ""
                     self.mitigation_action.status = f"sent_to_{endpoint_name.lower()}"
-                    self.mitigation_action.info = f"Sent to {endpoint_name} → {endpoint_name} sent to DOC → DOC successfully enforced action"
+                    self.mitigation_action.info = f"Sent to {endpoint_name}{domain_info} → {endpoint_name} sent to DOC → DOC successfully enforced action"
                     return True
                 elif response.status_code == 201:
                     print(f"Action created successfully at {endpoint_name}!")
                     print(response.text)
 
                     # Update mitigation action status and info for created
+                    domain_info = f" (in {endpoint_name.replace('DOC_', '')} domain)" if endpoint_name.startswith("DOC_") else ""
                     self.mitigation_action.status = f"sent_to_{endpoint_name.lower()}"
-                    self.mitigation_action.info = f"Sent to {endpoint_name} → {endpoint_name} created action → DOC processing enforcement"
+                    self.mitigation_action.info = f"Sent to {endpoint_name}{domain_info} → {endpoint_name} created action → DOC processing enforcement"
                     return True
                 elif response.status_code == 202:
                     print(f"Action accepted by {endpoint_name} for processing!")
                     print(response.text)
 
                     # Update mitigation action status and info for accepted
+                    domain_info = f" (in {endpoint_name.replace('DOC_', '')} domain)" if endpoint_name.startswith("DOC_") else ""
                     self.mitigation_action.status = f"sent_to_{endpoint_name.lower()}"
-                    self.mitigation_action.info = f"Sent to {endpoint_name} → {endpoint_name} accepted and queued → Waiting for DOC enforcement"
+                    self.mitigation_action.info = f"Sent to {endpoint_name}{domain_info} → {endpoint_name} accepted and queued → Waiting for DOC enforcement"
                     return True
                 elif response.status_code == 400:
                     print(f"Bad request to {endpoint_name} - invalid payload: {response.status_code}")
                     print(f"Response: {response.text}")
+                    domain_info = f" (in {endpoint_name.replace('DOC_', '')} domain)" if endpoint_name.startswith("DOC_") else ""
                     # Don't return False yet, try next endpoint
-                    if endpoint_name == "DOC":
+                    if endpoint_name == "DOC" or endpoint_name.startswith("DOC_"):
                         self.mitigation_action.status = f"sent_to_{endpoint_name.lower()}"
-                        self.mitigation_action.info = f"Sent to {endpoint_name} → {endpoint_name} rejected (400 Bad Request) → DOC enforcement failed"
+                        self.mitigation_action.info = f"Sent to {endpoint_name}{domain_info} → {endpoint_name} rejected (400 Bad Request) → DOC enforcement failed"
                         return False
                     continue  # Try next endpoint
                 elif response.status_code == 401:
                     print(f"Unauthorized request to {endpoint_name}: {response.status_code}")
                     print(f"Response: {response.text}")
+                    domain_info = f" (in {endpoint_name.replace('DOC_', '')} domain)" if endpoint_name.startswith("DOC_") else ""
                     # Don't return False yet, try next endpoint
-                    if endpoint_name == "DOC":
+                    if endpoint_name == "DOC" or endpoint_name.startswith("DOC_"):
                         self.mitigation_action.status = f"sent_to_{endpoint_name.lower()}"
-                        self.mitigation_action.info = f"Sent to {endpoint_name} → {endpoint_name} rejected (401 Unauthorized) → DOC enforcement failed"
+                        self.mitigation_action.info = f"Sent to {endpoint_name}{domain_info} → {endpoint_name} rejected (401 Unauthorized) → DOC enforcement failed"
                         return False
                     continue  # Try next endpoint
                 elif response.status_code == 404:
                     print(f"{endpoint_name} endpoint not found: {response.status_code}")
                     print(f"Response: {response.text}")
+                    domain_info = f" (in {endpoint_name.replace('DOC_', '')} domain)" if endpoint_name.startswith("DOC_") else ""
                     # Don't return False yet, try next endpoint
-                    if endpoint_name == "DOC":
+                    if endpoint_name == "DOC" or endpoint_name.startswith("DOC_"):
                         self.mitigation_action.status = f"sent_to_{endpoint_name.lower()}"
-                        self.mitigation_action.info = f"Sent to {endpoint_name} → {endpoint_name} endpoint not found (404) → DOC enforcement failed ({response.text})"
+                        self.mitigation_action.info = f"Sent to {endpoint_name}{domain_info} → {endpoint_name} endpoint not found (404) → DOC enforcement failed ({response.text})"
                         return False
                     continue  # Try next endpoint
                 elif response.status_code >= 500:
                     print(f"{endpoint_name} server error: {response.status_code}")
                     print(f"Response: {response.text}")
+                    domain_info = f" (in {endpoint_name.replace('DOC_', '')} domain)" if endpoint_name.startswith("DOC_") else ""
                     # Don't return False yet, try next endpoint
-                    if endpoint_name == "DOC":
+                    if endpoint_name == "DOC" or endpoint_name.startswith("DOC_"):
                         self.mitigation_action.status = f"sent_to_{endpoint_name.lower()}"
-                        self.mitigation_action.info = f"Sent to {endpoint_name} → {endpoint_name} server error ({response.status_code}) → DOC enforcement failed ({response.text})"
+                        self.mitigation_action.info = f"Sent to {endpoint_name}{domain_info} → {endpoint_name} server error ({response.status_code}) → DOC enforcement failed ({response.text})"
                         return False
                     continue  # Try next endpoint
                 else:
                     print(f"Unexpected response status code from {endpoint_name}: {response.status_code}")
                     print(f"Response: {response.text}")
+                    domain_info = f" (in {endpoint_name.replace('DOC_', '')} domain)" if endpoint_name.startswith("DOC_") else ""
                     # Don't return False yet, try next endpoint
-                    if endpoint_name == "DOC":
+                    if endpoint_name == "DOC" or endpoint_name.startswith("DOC_"):
                         self.mitigation_action.status = f"sent_to_{endpoint_name.lower()}"
-                        self.mitigation_action.info = f"Sent to {endpoint_name} → {endpoint_name} unexpected response ({response.status_code}) → DOC enforcement failed ({response.text})"
+                        self.mitigation_action.info = f"Sent to {endpoint_name}{domain_info} → {endpoint_name} unexpected response ({response.status_code}) → DOC enforcement failed ({response.text})"
                         return False
                     continue  # Try next endpoint
 
             except requests.exceptions.Timeout:
                 print(f"Timeout when connecting to {endpoint_name}")
-                # If this is the last endpoint (DOC), update status and return False
-                if endpoint_name == "DOC":
+                domain_info = f" (in {endpoint_name.replace('DOC_', '')} domain)" if endpoint_name.startswith("DOC_") else ""
+                # If this is the last endpoint (DOC or DOC_*), update status and return False
+                if endpoint_name == "DOC" or endpoint_name.startswith("DOC_"):
                     self.mitigation_action.status = "all_endpoints_failed"
-                    self.mitigation_action.info = f"ePEM unresponsive (timeout) → Tried DOC fallback but also timed out"
+                    self.mitigation_action.info = f"ePEM unresponsive (timeout) → Tried DOC{domain_info} fallback but also timed out"
                     return False
                 # Otherwise, continue to next endpoint
                 print(f"Trying fallback to DOC...")
@@ -378,10 +398,11 @@ class playbook_creator:
                 
             except requests.exceptions.ConnectionError:
                 print(f"Connection error when connecting to {endpoint_name}")
-                # If this is the last endpoint (DOC), update status and return False
-                if endpoint_name == "DOC":
+                domain_info = f" (in {endpoint_name.replace('DOC_', '')} domain)" if endpoint_name.startswith("DOC_") else ""
+                # If this is the last endpoint (DOC or DOC_*), update status and return False
+                if endpoint_name == "DOC" or endpoint_name.startswith("DOC_"):
                     self.mitigation_action.status = "all_endpoints_failed"
-                    self.mitigation_action.info = f"ePEM unresponsive (connection error) → Tried DOC fallback but also failed to connect"
+                    self.mitigation_action.info = f"ePEM unresponsive (connection error) → Tried DOC{domain_info} fallback but also failed to connect"
                     return False
                 # Otherwise, continue to next endpoint
                 print(f"Trying fallback to DOC...")
@@ -389,10 +410,11 @@ class playbook_creator:
                 
             except Exception as e:
                 print(f"An error occurred when connecting to {endpoint_name}: {str(e)}")
-                # If this is the last endpoint (DOC), update status and return False
-                if endpoint_name == "DOC":
+                domain_info = f" (in {endpoint_name.replace('DOC_', '')} domain)" if endpoint_name.startswith("DOC_") else ""
+                # If this is the last endpoint (DOC or DOC_*), update status and return False
+                if endpoint_name == "DOC" or endpoint_name.startswith("DOC_"):
                     self.mitigation_action.status = "all_endpoints_failed"
-                    self.mitigation_action.info = f"ePEM unresponsive ({str(e)}) → Tried DOC fallback but also failed: {str(e)}"
+                    self.mitigation_action.info = f"ePEM unresponsive ({str(e)}) → Tried DOC{domain_info} fallback but also failed: {str(e)}"
                     return False
                 # Otherwise, continue to next endpoint
                 print(f"Trying fallback to DOC...")
