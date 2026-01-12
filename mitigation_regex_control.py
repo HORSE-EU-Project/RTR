@@ -33,15 +33,26 @@ class playbook_creator:
             self.fill_in_ansible_playbook()
         
         
-        # Get the EPEM endpoint from environment variables
-        # The .env file already includes the protocol, so we don't need to add it
-        self.epem_endpoint = os.getenv('EPEM_ENDPOINT', 'http://httpbin.org/post')
+        # Get the EPEM endpoint based on the current domain
+        current_domain = os.getenv('CURRENT_DOMAIN', 'CNIT').upper()
+        if current_domain == 'CNIT':
+            self.epem_endpoint = os.getenv('EPEM_CNIT', 'http://192.168.130.94:5002')
+        elif current_domain == 'UPC':
+            self.epem_endpoint = os.getenv('EPEM_UPC', 'http://10.19.2.20:5002')
+        else:
+            self.epem_endpoint = 'http://10.19.2.20:5002'
         
-        # Get the DOC endpoint from environment variables (fallback when ePEM is unresponsive)
-        self.doc_endpoint = os.getenv('DOC_ENDPOINT', 'http://192.168.130.62:8001')
+        # Get the DOC endpoint based on the current domain
+        current_domain = os.getenv('CURRENT_DOMAIN', 'CNIT').upper()
+        if current_domain == 'CNIT':
+            self.doc_endpoint = os.getenv('DOC_CNIT', 'http://192.168.130.62:8001')
+        elif current_domain == 'UPC':
+            self.doc_endpoint = os.getenv('DOC_UPC', 'http://10.19.2.19:8001')
+        else:
+            self.doc_endpoint = 'http://192.168.130.62:8001'  # or some default value
             
         print(f"EPEM endpoint: {self.epem_endpoint}")
-        print(f"DOC endpoint (fallback): {self.doc_endpoint}")
+        print(f"DOC endpoint : {self.doc_endpoint}")
         print(self.chosen_playbook)
 
     
@@ -249,11 +260,26 @@ class playbook_creator:
             "Content-Type": "application/json"
         }
 
-        # Try ePEM first, then fallback to DOC if ePEM is unresponsive
+        #extract target_domain for logging
+        target_domain = getattr(self.mitigation_action, 'target_domain', 'unknown')
+        
+        # If target_domain contains more than 2 items, the mitigation action is a multidomain action
+        # So the endpoint should be amplified with the Domian's DOC endpoint accordingly ("UPC" = "DOC_UPC", CNIT = "DOC_CNIT", etc)
         endpoints = [
             (self.epem_endpoint + "/v2/horse/rtr_request", "ePEM"),
             (self.doc_endpoint + "/api/mitigate", "DOC")
         ]
+        if isinstance(target_domain, list) and len(target_domain) > 2:
+            print(f"Multidomain mitigation action detected for domains: {target_domain}")
+            # Here we could modify the endpoint or payload if needed for multidomain handling
+            # For now, we just log it.
+            for domain in target_domain:
+                print(f" - Domain involved: {domain}")
+                #if domain equals to current domain, skip adding extra endpoint
+                if domain.upper() == os.getenv('CURRENT_DOMAIN', 'CNIT').upper():
+                    continue
+                endpoints.append((os.getenv(f'DOC_{domain}', 'http://192.168.130.62:8001')+"/api/mitigate", f"DOC_{domain}"))
+        
         
         for api_url, endpoint_name in endpoints:
             print(f"Attempting to send request to {endpoint_name} endpoint: {api_url}")

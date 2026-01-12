@@ -24,26 +24,6 @@ class mitigation_action_model(BaseModel):
     info: str = Field(default="to be enforced", example="Action successfully executed", description="Additional information about the action status")
     ansible_command: str = Field(default="", example="- hosts: [172.16.2.1]\n  tasks:\n...", description="The generated Ansible playbook command")
 
-    # @model_validator(mode='before')
-    # def normalize_action_name(cls, values):
-    #     """Translate legacy action names in the incoming payload.
-
-    #     If incoming `action` is a dict and contains a name of
-    #     'block_pod_address' (either at action['name'] or action['fields']['name']),
-    #     translate it to 'block_ip_addresses' before validation.
-    #     """
-    #     action = values.get('action')
-    #     if isinstance(action, dict):
-    #         # Check field-level name and translate from 'block_ip_address' -> 'block_pod_address'
-    #         fields = action.get('fields')
-    #         if isinstance(fields, dict) and fields.get('name') == 'block_ip_address':
-    #             fields['name'] = 'block_pod_addresses'
-
-    #         # write back the possibly-updated action
-    #         values['action'] = action
-
-    #     return values
-
     @model_validator(mode='before')
     def normalize_blocked_pod_and_fields(cls, values):
         """Normalize incoming action payloads:
@@ -99,7 +79,7 @@ class mitigation_action_model(BaseModel):
         mit_host = getattr(self, 'mitigation_host', None)
         action = getattr(self, 'action', None)
         duration = getattr(self, 'duration', None)
-        domain = getattr(self, 'domains', None)
+        target_domain = getattr(self, 'target_domain', None)
 
         # Treat empty string or default placeholder as not set
         if mit_host in (None, '', '0.0.0.0'): 
@@ -119,7 +99,7 @@ class mitigation_action_model(BaseModel):
                     if key in fields and fields[key]:
                         self.duration = int(fields[key])
                         break
-        if domain in (None, '', []):
+        if target_domain in (None, '', []):
             if isinstance(action, dict):
                 fields = action.get('fields', {}) or {}
                 # keys to check in order of preference

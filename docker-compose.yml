@@ -5,8 +5,14 @@ services:
     build: .
     ports:
       - "8000:8000"
-    env_file:
-      - .env
+    environment:
+      - MONGODB_PORT=${MONGODB_PORT}
+      - MONGODB_HOST=mongodb
+      - EPEM_ENDPOINT=${EPEM_ENDPOINT}
+      - DOC_CNIT=${DOC_CNIT}
+      - DOC_UPC=${DOC_UPC}
+      - CURRENT_DOMAIN=${CURRENT_DOMAIN}
+
     volumes:
       - .:/app
     depends_on:
