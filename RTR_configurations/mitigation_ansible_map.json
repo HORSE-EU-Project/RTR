@@ -1,0 +1,25 @@
+{
+  "action_name_to_playbook": {
+    "DNS_RATE_LIMIT": "ansible_playbooks/dns_rate_limiting.yaml",
+    "DNS_SERV_DISABLE": "ansible_playbooks/dns_service_disable.yaml",
+    "DNS_SERV_ENABLE": "ansible_playbooks/dns_service_enable.yaml",
+    "TEST": "ansible_playbooks/test_1.yaml",
+    "DNS_RATE_LIMITING": "ansible_playbooks/dns_rate_limiting.yaml",
+    "DNS_SERVICE_DISABLE": "ansible_playbooks/dns_service_disable.yaml",
+    "DNS_SERVICE_HANDOVER": "ansible_playbooks/dns_service_handover.yaml",
+    "DNS_FIREWALL_SPOOFING_DETECTION": "ansible_playbooks/dns_firewall_spoofing_detection.yaml",
+    "TEST_2": "ansible_playbooks/test_2.yaml",
+    "BLOCK_POD_ADDRESS": "ansible_playbooks/block_pod_address.yaml",
+    "BLOCK_POD_ADDRESSES": "ansible_playbooks/block_pod_address.yaml",
+    "BLOCK_IP_ADDRESSES": "ansible_playbooks/block_pod_address.yaml",
+    "API_RATE_LIMITING": "ansible_playbooks/dns_rate_limiting.yaml",
+    "API_RATE_LIMIT": "ansible_playbooks/dns_rate_limiting.yaml",
+    "BLOCK_UES_MULTIDOMAIN": "ansible_playbooks/block_pod_address.yaml",
+    "FILTER_MALICIOUS_ACCESS": "ansible_playbooks/dns_firewall_spoofing_detection.yaml"
+  },
+  "metadata": {
+    "version": "1.0",
+    "description": "Mapping of mitigation action names to their corresponding Ansible playbook paths",
+    "last_updated": "2026-01-13"
+  }
+}

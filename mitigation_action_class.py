@@ -108,51 +108,43 @@ class mitigation_action_model(BaseModel):
         return self
 
     class Config:
-        schema_extra = {
-            "examples": {
-                "Add a DDoS Mitigation Action (Dictionary Format)": {
-                    "summary": "Create an action to mitigate a DDoS attack using structured format",
-                    "description": "This example creates a mitigation action using the recommended dictionary format.",
-                    "value": {
-                        "command": "add",
-                        "intent_type": "mitigation", 
+        json_schema_extra = {
+            "examples": [
+                {
+                    "command": "add",
+                    "intent_type": "mitigation", 
+                    "intent_id": "30001",
+                    "threat": "ddos",
+                    "action": { 
+                        "name": "dns_rate_limit",
                         "intent_id": "30001",
-                        "threat": "ddos",
-                        "action": { 
-                            "name": "dns_rate_limit",
-                            "intent_id": "30001",
-                            "fields": {
-                                "rate": 20,
-                                "duration": 60,
-                                "source_ip_filter": ["malicious_ips"]
-                            }
-                        },
-                        "attacked_host": "10.0.0.1",
-                        "mitigation_host": "172.16.2.1",
-                        "duration": 7000,
-                        "status": "pending",
-                        "info": "to be enforced",
-                        "ansible_command": ""
-                    }
+                        "fields": {
+                            "rate": 20,
+                            "duration": 60,
+                            "source_ip_filter": ["malicious_ips"]
+                        }
+                    },
+                    "attacked_host": "10.0.0.1",
+                    "mitigation_host": "172.16.2.1",
+                    "duration": 7000,
+                    "status": "pending",
+                    "info": "to be enforced",
+                    "ansible_command": ""
                 },
-                "Add a DDoS Mitigation Action (String Format)": {
-                    "summary": "Create an action to mitigate a DDoS attack using string format",
-                    "description": "This example creates a mitigation action using the legacy string format.",
-                    "value": {
-                        "command": "add",
-                        "intent_type": "mitigation", 
-                        "intent_id": "ABC125",
-                        "threat": "ddos",
-                        "action": "rate limit DNS server at ip 10.10.2.1 at port 123, for 20 requests per second",
-                        "attacked_host": "10.10.2.1",
-                        "mitigation_host": "172.16.2.1",
-                        "duration": 7000,
-                        "status": "pending",
-                        "info": "to be enforced",
-                        "ansible_command": ""
-                    }
+                {
+                    "command": "add",
+                    "intent_type": "mitigation", 
+                    "intent_id": "ABC125",
+                    "threat": "ddos",
+                    "action": "rate limit DNS server at ip 10.10.2.1 at port 123, for 20 requests per second",
+                    "attacked_host": "10.10.2.1",
+                    "mitigation_host": "172.16.2.1",
+                    "duration": 7000,
+                    "status": "pending",
+                    "info": "to be enforced",
+                    "ansible_command": ""
                 }
-            }
+            ]
         }
 
 
@@ -163,27 +155,19 @@ class UpdateActionStatusRequest(BaseModel):
     info: str = Field(..., example="Action successfully executed")
 
     class Config:
-        schema_extra = {
-            "examples": {
-                "Update to Completed": {
-                    "summary": "Mark action as completed",
-                    "description": "This marks the action as completed with additional info.",
-                    "value": {
-                        "intent_id": "ABC124",  # Using intent_id instead of action_id
-                        "status": "completed",
-                        "info": "Action successfully executed"
-                    }
+        json_schema_extra = {
+            "examples": [
+                {
+                    "intent_id": "ABC124",
+                    "status": "completed",
+                    "info": "Action successfully executed"
                 },
-                "Update with Error": {
-                    "summary": "Mark action as error",
-                    "description": "This marks the action as failed due to an error.",
-                    "value": {
-                        "intent_id": "ABC124",  # Using intent_id instead of action_id
-                        "status": "error",
-                        "info": "Execution failed due to timeout"
-                    }
+                {
+                    "intent_id": "ABC124",
+                    "status": "error",
+                    "info": "Execution failed due to timeout"
                 }
-            }
+            ]
         }
 
 

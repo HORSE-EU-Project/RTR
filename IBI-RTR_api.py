@@ -16,6 +16,7 @@ import threading
 import requests
 import re
 from urllib.parse import urlparse
+from config_loader import get_config_loader, reload_configurations
 
 # Load environment variables
 load_dotenv(find_dotenv())
@@ -109,6 +110,11 @@ def configure_epem_doc_endpoint():
 async def startup_event():
     """Run configuration tasks when the application starts"""
     print("🚀 RTR API starting up...")
+    
+    # Load configurations
+    config_loader = get_config_loader()
+    print(f"📋 Loaded {len(config_loader.get_all_action_mappings())} mitigation action mappings")
+    
     configure_epem_doc_endpoint()
     print("✨ RTR API startup complete")
 
@@ -139,6 +145,41 @@ def login(request: OAuth2PasswordRequestForm = Depends()):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Incorrect username or password")
     access_token = create_access_token(data={"sub": user["username"]})
     return {"access_token": access_token, "token_type": "bearer"}
+
+@rtr_api.post("/api/reload-config")
+def reload_config(token: str = Depends(oauth2_scheme)):
+    """
+    Reload all RTR configuration files without restarting the Docker container
+    Requires authentication
+    """
+    # Verify the token
+    current_user = get_current_user(token)
+    
+    try:
+        status_info = reload_configurations()
+        return status_info
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error reloading configurations: {str(e)}"
+        )
+
+@rtr_api.get("/api/config/actions")
+def get_action_mappings(token: str = Depends(oauth2_scheme)):
+    """
+    Get all currently loaded mitigation action to playbook mappings
+    Requires authentication
+    """
+    # Verify the token
+    current_user = get_current_user(token)
+    
+    config_loader = get_config_loader()
+    mappings = config_loader.get_all_action_mappings()
+    
+    return {
+        "total_mappings": len(mappings),
+        "action_mappings": mappings
+    }
 
 @rtr_api.get("/actions")
 def get_all_mitigation_actions(token: str = Depends(oauth2_scheme)):
@@ -192,7 +233,7 @@ def register_new_action(
             # Create playbook using the mitigation action
             playbook = playbook_creator(new_action)
             
-            if playbook.chosen_playbook:
+            if playbook.chosen_playbook and playbook.chosen_playbook != "UNKNOWN_ACTION_TYPE":
                 # Generate the Ansible playbook content
                 playbook_txt = playbook.fill_in_ansible_playbook()
                 
@@ -211,11 +252,33 @@ def register_new_action(
                 error_info = getattr(playbook.mitigation_action, 'info', 'No matching playbook found for this action')
                 mitigation_actions[intent_id]["status"] = "transform_failed"
                 mitigation_actions[intent_id]["info"] = error_info
+                # Return 404 for unknown action types to help clients identify configuration issues
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail=error_info
+                )
                 
+        except HTTPException:
+            # Re-raise HTTP exceptions to preserve status codes
+            raise
+        except ValueError as e:
+            # Handle configuration/mapping errors with 404
+            error_msg = f"Action mapping error: {str(e)}"
+            mitigation_actions[intent_id]["status"] = "config_error"
+            mitigation_actions[intent_id]["info"] = error_msg
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=error_msg
+            )
         except Exception as e:
-            # Handle any exceptions during playbook creation
+            # Handle any other exceptions during playbook creation with 500
+            error_msg = f"Error processing action: {str(e)}"
             mitigation_actions[intent_id]["status"] = "error"
-            mitigation_actions[intent_id]["info"] = f"Error processing action: {str(e)}"
+            mitigation_actions[intent_id]["info"] = error_msg
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=error_msg
+            )
 
         return {
             "message": "Action created and being processed", 
