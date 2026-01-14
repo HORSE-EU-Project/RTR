@@ -115,6 +115,7 @@ class mitigation_action_model(BaseModel):
                     "intent_type": "mitigation", 
                     "intent_id": "30001",
                     "threat": "ddos",
+                    "target_domain": "UPC/CNIT/UMU",
                     "action": { 
                         "name": "dns_rate_limit",
                         "intent_id": "30001",
@@ -136,6 +137,7 @@ class mitigation_action_model(BaseModel):
                     "intent_type": "mitigation", 
                     "intent_id": "ABC125",
                     "threat": "ddos",
+                    "target_domain": ["UPC", "CNIT"],
                     "action": "rate limit DNS server at ip 10.10.2.1 at port 123, for 20 requests per second",
                     "attacked_host": "10.10.2.1",
                     "mitigation_host": "172.16.2.1",
