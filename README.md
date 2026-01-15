@@ -4,10 +4,10 @@ RTR is a software tool developed for the HORSE project. The purpose of the RTR i
 
 ## Installation
 
-Downlad and run the application:
+Download and run the application:
 - git clone [https://github.com/Eight-Bells-Ltd/Reliability-Trust-Resilience-RTR.git](https://github.com/Eight-Bells-Ltd/Reliability-Trust-Resilience-RTR.git)
 - cd Reliability-Trust-Resilience-RTR
-- git pull origin master
+- git pull origin main
 - docker compose build
 - docker compose up -d (-d: runs the application in the background)
 
@@ -27,17 +27,18 @@ We specify the Docker image to use for the mongodb service. We also set the cont
 
 ## The main App
 
-The application's functionality are fostered by fastAPI. The fastAPI implements 7 functionalities:
+The application's functionality are fostered by FastAPI. The FastAPI application implements the following endpoints:
 - root (GET): A welcome page.
 - user register (POST): A registration interface for new users.
 - user login (POST): A log-in interface for existing users. (OAuth 2.0)
 - post an action (POST): Sends a new action to the RTR. (OAuth 2.0)
 - get actions (GET): Requests all of the available actions currently stored inside the API. (OAuth 2.0)
 - get specific action (GET): Requests a specific action based on the action's unique ID. (OAuth 2.0)
-- delete action (POST): Deletes a specific action based on the action's unique ID. (OAuth 2.0)
-- update action (POST): Updates an action's status based on the actioin's unique ID. (OAuth 2.0)
+- update action status (POST): Updates an action's status based on the action's unique ID. (OAuth 2.0)
+- reload configuration (POST): Reloads the mitigation action to playbook mappings without restarting the container. (OAuth 2.0)
+- get action mappings (GET): Retrieves all currently loaded mitigation action to playbook mappings. (OAuth 2.0)
 
-All of the above are protected with OAuth 2.0 authentication.
+All endpoints except root, register, and login are protected with OAuth 2.0 authentication.
 
 
 # User registration
@@ -53,33 +54,66 @@ In order for the user to interact with the rest of the interfaces a Log-In is re
 We followed the implementation in this article https://manjeetkapil.medium.com/create-a-authentication-system-using-react-fastapi-and-mongodb-farm-stack-d2ea6a35bf47 for the authorization aspects of the application.
 
 # Post an action
-The RTR was developed for the purposes of HORSE and it should receive input from IBI(Intent Based Interface). The partners from TUBS will provide us with JSONs describing mitigation action's in certain parts of the network topology. This is an example of such an action:
+The RTR was developed for the purposes of HORSE and it should receive input from IBI (Intent Based Interface). The partners from TUBS will provide us with JSONs describing mitigation actions in certain parts of the network topology. This is an example of such an action:
 
 {
-    "command": "add" or "delete", 
+    "command": "add",
     "intent_type": "mitigation" or "prevention",
-    "threat": e.g. "ddos"
+    "threat": e.g. "ddos",
     "attacked_host": e.g. "10.0.0.1",
     "mitigation_host": e.g. "172.16.2.1",
     "action": e.g. "Block potentially spoofed packets with destination 192.68.0.0/24 in interface wlan0",
     "duration": e.g. 7000,
     "intent_id": e.g. "ABC123",
-    "command": e.g. "add",
+    "target_domain": e.g. "CNIT" or "UPC",
     "status": e.g. "pending",
-    "info": e.g. "Blocking spoofed packets in the specified IP range on wlan0 interface."
+    "info": e.g. "Blocking spoofed packets in the specified IP range on wlan0 interface.",
+    "ansible_command": e.g. ""
 }
 
-We check inside the App if the JSON they provide us with meets the criteria of the schema above. Another check is done intrenally inside the database to confirm the validity of the JSON. This 2nd check is performed by the validation schema of the db.
-After an action is stored inside the db, we provide the sender with ID the db assigned to the new object.
+We validate the JSON against the schema requirements before processing. The mitigation action is then transformed into an Ansible playbook based on the mapping defined in [mitigation_ansible_map.json](https://github.com/Eight-Bells-Ltd/Reliability-Trust-Resilience-RTR/blob/main/RTR_configurations/mitigation_ansible_map.json). After successful creation, the action is stored in memory and its status is tracked throughout the execution lifecycle.
 
 # Get actions
-We expose 2 get interfaces:
-- The 1st interface returns every action currently residing inside our database
-- The 2nd interface retuerns a secific action based on the unique ID of this action.
-- Maybe we will enhance that by gettig actions from a specific time frame.
+We expose 2 GET interfaces:
+- The 1st interface returns every action currently stored in the application's in-memory storage
+- The 2nd interface returns a specific action based on its unique intent_id
 
-# Delete actions
-We have also exposed a delete interface. IBI will be able to request the deletion of deprecated and old mitigation actions. The deletion is done again based on the ID we have sent to the IBI when the mtigation action was stored inside our db. We may not include this interface evebtually because of the command field inside the JSON. This 'command' will instruct us to either add an action or delete an existing on or maybe even update. TBD
+## Configuration Management
 
-# Update actions
-The update_action_status functionality allows you to update the status of a previously submitted mitigation action. This operation is useful for reflecting the current state of an action, such as when a mitigation process has been completed or encounters an issue.
+# Mitigation Action to Playbook Mapping
+The RTR uses a configuration file [mitigation_ansible_map.json](https://github.com/Eight-Bells-Ltd/Reliability-Trust-Resilience-RTR/blob/main/RTR_configurations/mitigation_ansible_map.json) to map mitigation action types to their corresponding Ansible playbook files. This mapping file contains:
+
+- **action_name_to_playbook**: A dictionary that maps action names (e.g., "DNS_RATE_LIMITING", "BLOCK_POD_ADDRESS") to their corresponding playbook paths (e.g., "ansible_playbooks/dns_rate_limiting.yaml")
+- **metadata**: Version information, description, and last update timestamp
+
+When a mitigation action is received, the RTR extracts the action type from the JSON payload and uses this mapping to determine which Ansible playbook template to use. This design allows for easy addition of new mitigation actions by simply updating the configuration file without modifying the application code.
+
+Example mapping:
+```json
+{
+  "action_name_to_playbook": {
+    "DNS_RATE_LIMITING": "ansible_playbooks/dns_rate_limiting.yaml",
+    "BLOCK_POD_ADDRESS": "ansible_playbooks/block_pod_address.yaml",
+    "API_RATE_LIMITING": "ansible_playbooks/dns_rate_limiting.yaml"
+  }
+}
+```
+
+# Reload Configuration
+The `/api/reload-config` endpoint (POST) allows authenticated users to reload the mitigation_ansible_map.json file without restarting the Docker container. This is useful when:
+- New mitigation action mappings are added
+- Existing mappings are updated
+- Playbook paths are changed
+
+The endpoint returns status information about the reload operation, including which configuration files were reloaded and any errors encountered.
+
+# Get Action Mappings
+The `/api/config/actions` endpoint (GET) allows authenticated users to retrieve all currently loaded mitigation action to playbook mappings. This is useful for:
+- Verifying which mitigation actions are currently supported
+- Debugging configuration issues
+- Documenting available mitigation actions
+
+The endpoint returns the total number of mappings and the complete action_name_to_playbook dictionary.
+
+# Update Action Status
+The `/update_action_status` endpoint allows you to update the status of a previously submitted mitigation action. This operation is useful for reflecting the current state of an action, such as when a mitigation process has been completed or encounters an issue. The endpoint accepts an intent_id, status, and optional info field to provide detailed status updates.
