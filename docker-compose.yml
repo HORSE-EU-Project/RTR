@@ -4,7 +4,7 @@ services:
   rtr-api:
     build: .
     ports:
-      - "8000:8000"
+      - "${PORT:-8000}:8000"
     environment:
       - MONGODB_PORT=${MONGODB_PORT}
       - MONGODB_HOST=mongodb
