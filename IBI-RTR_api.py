@@ -60,7 +60,11 @@ def configure_epem_doc_endpoint():
         elif current_domain == 'UPC':
             epem_endpoint = os.getenv('EPEM_UPC', 'http://10.19.2.20:5002')
             doc_endpoint = os.getenv('DOC_UPC', 'http://10.19.2.19:8001')
+        elif current_domain == 'UMU':
+            epem_endpoint = os.getenv('EPEM_UMU', 'http://10.0.0.1:5002')
+            doc_endpoint = os.getenv('DOC_UMU', 'http://10.0.0.2:8001')
         else:
+            print(f"⚠️ Unknown domain '{current_domain}', defaulting to CNIT")
             epem_endpoint = os.getenv('EPEM_CNIT', 'http://192.168.130.233:5002')
             doc_endpoint = os.getenv('DOC_CNIT', 'http://192.168.130.62:8001')
         

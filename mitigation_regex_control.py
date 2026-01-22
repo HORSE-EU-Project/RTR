@@ -39,6 +39,8 @@ class playbook_creator:
             self.epem_endpoint = os.getenv('EPEM_CNIT', 'http://192.168.130.233:5002')
         elif current_domain == 'UPC':
             self.epem_endpoint = os.getenv('EPEM_UPC', 'http://10.19.2.20:5002')
+        elif current_domain == 'UMU':
+            self.epem_endpoint = os.getenv('EPEM_UMU', 'http://10.0.0.1:5002')
         else:
             # Default to CNIT if CURRENT_DOMAIN is not set
             self.epem_endpoint = os.getenv('EPEM_CNIT', 'http://192.168.130.233:5002')

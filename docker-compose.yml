@@ -10,8 +10,10 @@ services:
       - MONGODB_HOST=mongodb
       - EPEM_CNIT=${EPEM_CNIT}
       - EPEM_UPC=${EPEM_UPC}
+      - EPEM_UMU=${EPEM_UMU}
       - DOC_CNIT=${DOC_CNIT}
       - DOC_UPC=${DOC_UPC}
+      - DOC_UMU=${DOC_UMU}
       - CURRENT_DOMAIN=${CURRENT_DOMAIN}
 
     volumes:
