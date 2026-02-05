@@ -1,5 +1,6 @@
 from pydantic import BaseModel, Field, model_validator
 from typing import Optional, Literal, Dict, Any, List, Union
+import os
 
 
 # Enhanced mitigation_action_model
@@ -104,6 +105,11 @@ class mitigation_action_model(BaseModel):
                     if key in fields and fields[key]:
                         self.target_domain = fields[key]
                         break
+            
+            # If still not set, fallback to CURRENT_DOMAIN from .env
+            if self.target_domain in (None, '', []):
+                current_domain = os.getenv('CURRENT_DOMAIN', 'CNIT')
+                self.target_domain = current_domain
         
         return self
 
