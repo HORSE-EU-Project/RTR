@@ -44,17 +44,20 @@ class mitigation_action_model(BaseModel):
             
             fields = action.get('fields') or {}
 
-            # If action name is 'block_pod_address', translate field 'blocked_pod' -> 'blocked_ips'
-            if action.get('name') == 'block_pod_address' and isinstance(fields, dict):
-                if 'blocked_pod' in fields:
-                    v = fields.pop('blocked_pod')
-                    if isinstance(v, str):
-                        v = [v]
-                    fields['blocked_ips'] = v
-
-            # If blocked_ips exists and is a string, convert to list
-            if isinstance(fields, dict) and 'blocked_ips' in fields and isinstance(fields['blocked_ips'], str):
-                fields['blocked_ips'] = [fields['blocked_ips']]
+            # Normalize 'blocked_pod', 'host', or 'blocked_ips' -> 'blocked_ips' as a list
+            if isinstance(fields, dict):
+                blocked_value = None
+                # Check for any of the field names and consolidate to 'blocked_ips'
+                for field_name in ['blocked_pod', 'host', 'blocked_ips']:
+                    if field_name in fields:
+                        blocked_value = fields.pop(field_name)
+                        break
+                
+                # If we found a value, ensure it's a list and set as 'blocked_ips'
+                if blocked_value is not None:
+                    if isinstance(blocked_value, str):
+                        blocked_value = [blocked_value]
+                    fields['blocked_ips'] = blocked_value
 
             # Handle 'block_ues_multidomain' actions: extract domains and populate mitigation_host & target_domain
             if action.get('name') == 'block_ues_multidomain' and isinstance(fields, dict):
