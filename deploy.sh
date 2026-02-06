@@ -57,6 +57,70 @@ if [ -f .env ]; then
   fi
 fi
 
+# Detect the real IP address of the machine
+echo "🔍 Detecting RTR host IP address..."
+if [[ "$OSTYPE" == "darwin"* ]]; then
+  # macOS
+  RTR_HOST=$(ipconfig getifaddr en0 2>/dev/null || ipconfig getifaddr en1 2>/dev/null || echo "localhost")
+elif [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" ]]; then
+  # Windows Git Bash
+  RTR_HOST=$(ipconfig | grep -A 5 "Ethernet adapter" | grep "IPv4" | head -n 1 | sed 's/.*: //' | tr -d '\r' || echo "localhost")
+else
+  # Linux
+  RTR_HOST=$(hostname -I | awk '{print $1}' || echo "localhost")
+fi
+
+# Fallback to localhost if no IP detected
+if [ -z "$RTR_HOST" ] || [ "$RTR_HOST" = " " ]; then
+  RTR_HOST="localhost"
+  echo "⚠️  Could not detect IP address, using localhost"
+else
+  echo "✅ Detected RTR_HOST: $RTR_HOST"
+fi
+
+# Set RTR_PORT to the same as PORT
+RTR_PORT=$PORT
+
+# Update RTR_HOST in .env file
+if [ -f .env ]; then
+  if grep -q "^RTR_HOST = " .env; then
+    # RTR_HOST variable exists, update it
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+      sed -i '' "s/^RTR_HOST = .*$/RTR_HOST = \"$RTR_HOST\"/" .env
+    else
+      sed -i "s/^RTR_HOST = .*$/RTR_HOST = \"$RTR_HOST\"/" .env
+    fi
+  else
+    # RTR_HOST variable doesn't exist, add it after PORT
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+      sed -i '' "/^PORT = /a\\
+RTR_HOST = \"$RTR_HOST\"" .env
+    else
+      sed -i "/^PORT = /a RTR_HOST = \"$RTR_HOST\"" .env
+    fi
+  fi
+fi
+
+# Update RTR_PORT in .env file
+if [ -f .env ]; then
+  if grep -q "^RTR_PORT = " .env; then
+    # RTR_PORT variable exists, update it
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+      sed -i '' "s/^RTR_PORT = .*$/RTR_PORT = \"$RTR_PORT\"/" .env
+    else
+      sed -i "s/^RTR_PORT = .*$/RTR_PORT = \"$RTR_PORT\"/" .env
+    fi
+  else
+    # RTR_PORT variable doesn't exist, add it after RTR_HOST
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+      sed -i '' "/^RTR_HOST = /a\\
+RTR_PORT = \"$RTR_PORT\"" .env
+    else
+      sed -i "/^RTR_HOST = /a RTR_PORT = \"$RTR_PORT\"" .env
+    fi
+  fi
+fi
+
 # Update CURRENT_DOMAIN in .env file
 if [ -f .env ]; then
   echo "📝 Updating CURRENT_DOMAIN in .env file..."
@@ -78,6 +142,8 @@ echo ""
 echo "📋 Deployment Configuration:"
 echo "  - Testbed: $TESTBED"
 echo "  - Port: $PORT"
+echo "  - RTR Host: $RTR_HOST"
+echo "  - RTR Port: $RTR_PORT"
 grep "CURRENT_DOMAIN" .env 2>/dev/null || echo "  - CURRENT_DOMAIN: Not found in .env"
 grep "EPEM_$TESTBED" .env 2>/dev/null || echo "  - EPEM endpoint: Not configured"
 grep "DOC_$TESTBED" .env 2>/dev/null || echo "  - DOC endpoint: Not configured"
@@ -94,5 +160,6 @@ docker compose up -d
 echo ""
 echo "✨ Deployment complete!"
 echo "🌐 RTR API accessible at: http://localhost:$PORT"
-echo "📊 Check status with: docker compose ps"
+echo "� Callback URL: http://$RTR_HOST:$RTR_PORT/update_action_status"
+echo "�📊 Check status with: docker compose ps"
 echo "📜 View logs with: docker compose logs -f rtr-api"

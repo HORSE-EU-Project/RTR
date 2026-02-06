@@ -114,6 +114,13 @@ class mitigation_action_model(BaseModel):
                 current_domain = os.getenv('CURRENT_DOMAIN', 'CNIT')
                 self.target_domain = current_domain
         
+        # Add an attribute called callback_url that stores the URL and port of the current RTR component
+        # This can be used by the mitigation engine to send status updates or results back to the RTR after executing the mitigation action.
+        rtr_host = os.getenv('RTR_HOST', 'localhost')
+        rtr_port = os.getenv('RTR_PORT', '8000')
+        self.callback_url = f"http://{rtr_host}:{rtr_port}/update_action_status"
+        
+        
         return self
 
     class Config:
