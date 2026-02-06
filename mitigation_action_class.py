@@ -24,6 +24,7 @@ class mitigation_action_model(BaseModel):
     status: str = Field(default="pending", example="completed", description="Current status of the mitigation action")
     info: str = Field(default="to be enforced", example="Action successfully executed", description="Additional information about the action status")
     ansible_command: str = Field(default="", example="- hosts: [172.16.2.1]\n  tasks:\n...", description="The generated Ansible playbook command")
+    callback_url: str = Field(default="", example="http://localhost:8000/update_action_status", description="URL for status update callbacks")
 
     @model_validator(mode='before')
     def normalize_blocked_pod_and_fields(cls, values):
