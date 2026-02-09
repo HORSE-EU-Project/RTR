@@ -2,14 +2,17 @@
 
 # Define environment variables
 if [ -z "$1" ]; then
-  echo "Usage: $0 <TESTBED> [PORT]"
+  echo "Usage: $0 <TESTBED> [PORT] [EPEM_ENDPOINT] [DOC_ENDPOINT]"
   echo "  TESTBED: CNIT, UPC, or UMU"
   echo "  PORT: Optional port number (default: 8000 for CNIT/UPC, 8003 for UMU)"
+  echo "  EPEM_ENDPOINT: Optional EPEM endpoint URL (e.g., http://192.168.130.233:5002)"
+  echo "  DOC_ENDPOINT: Optional DOC endpoint URL (e.g., http://192.168.130.62:8001)"
   echo ""
   echo "Examples:"
-  echo "  $0 CNIT        # Uses port 8000"
-  echo "  $0 UMU         # Uses port 8003"
+  echo "  $0 CNIT        # Uses port 8000 and default endpoints from .env"
+  echo "  $0 UMU         # Uses port 8003 and default endpoints from .env"
   echo "  $0 CNIT 8080   # Uses custom port 8080"
+  echo "  $0 CNIT 8000 http://10.0.0.1:5002 http://10.0.0.2:8001   # Custom endpoints"
   exit 1
 fi
 
@@ -38,6 +41,24 @@ else
     PORT=8000
   fi
   echo "📝 Using default port for $TESTBED: $PORT"
+fi
+
+# Handle optional EPEM endpoint
+if [ -n "$3" ]; then
+  EPEM_ENDPOINT="$3"
+  echo "📝 Setting custom EPEM endpoint: $EPEM_ENDPOINT"
+else
+  EPEM_ENDPOINT=""
+  echo "📝 Using default EPEM endpoint from .env"
+fi
+
+# Handle optional DOC endpoint
+if [ -n "$4" ]; then
+  DOC_ENDPOINT="$4"
+  echo "📝 Setting custom DOC endpoint: $DOC_ENDPOINT"
+else
+  DOC_ENDPOINT=""
+  echo "📝 Using default DOC endpoint from .env"
 fi
 
 # Update PORT in .env file
@@ -135,6 +156,38 @@ if [ -f .env ]; then
   echo "✅ CURRENT_DOMAIN set to: $TESTBED"
 else
   echo "⚠️  Warning: .env file not found"
+fi
+
+# Update EPEM endpoint if provided
+if [ -n "$EPEM_ENDPOINT" ] && [ -f .env ]; then
+  echo "📝 Updating EPEM_$TESTBED endpoint in .env file..."
+  if grep -q "^EPEM_$TESTBED = " .env; then
+    # EPEM variable exists, update it
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+      sed -i '' "s|^EPEM_$TESTBED = .*$|EPEM_$TESTBED = \"$EPEM_ENDPOINT\"|" .env
+    else
+      sed -i "s|^EPEM_$TESTBED = .*$|EPEM_$TESTBED = \"$EPEM_ENDPOINT\"|" .env
+    fi
+    echo "✅ EPEM_$TESTBED set to: $EPEM_ENDPOINT"
+  else
+    echo "⚠️  Warning: EPEM_$TESTBED not found in .env file"
+  fi
+fi
+
+# Update DOC endpoint if provided
+if [ -n "$DOC_ENDPOINT" ] && [ -f .env ]; then
+  echo "📝 Updating DOC_$TESTBED endpoint in .env file..."
+  if grep -q "^DOC_$TESTBED = " .env; then
+    # DOC variable exists, update it
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+      sed -i '' "s|^DOC_$TESTBED = .*$|DOC_$TESTBED = \"$DOC_ENDPOINT\"|" .env
+    else
+      sed -i "s|^DOC_$TESTBED = .*$|DOC_$TESTBED = \"$DOC_ENDPOINT\"|" .env
+    fi
+    echo "✅ DOC_$TESTBED set to: $DOC_ENDPOINT"
+  else
+    echo "⚠️  Warning: DOC_$TESTBED not found in .env file"
+  fi
 fi
 
 # Display configuration

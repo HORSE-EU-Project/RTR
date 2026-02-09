@@ -5,23 +5,66 @@ RTR is a software tool developed for the HORSE project. The purpose of the RTR i
 ## Installation
 
 Download and run the application:
-- git clone [https://github.com/Eight-Bells-Ltd/Reliability-Trust-Resilience-RTR.git](https://github.com/Eight-Bells-Ltd/Reliability-Trust-Resilience-RTR.git)
-- cd Reliability-Trust-Resilience-RTR
-- git pull origin main
+- git clone https://github.com/HORSE-EU-Project/RTR.git
+- cd RTR
+- git checkout develop  # or main, depending on which branch you want to use
+- Copy .env.example to .env and configure your environment variables (if .env.example exists)
+- Deploy using the deployment script: `./deploy.sh <TESTBED>` where TESTBED is CNIT, UPC, or UMU
+
+Alternatively, you can run with Docker Compose directly:
 - docker compose build
-- docker compose up -d (-d: runs the application in the background)
+- docker compose up -d  # -d runs the application in the background
+
+For more deployment options, run: `./deploy.sh` to see usage instructions.
+
+## Deployment Script
+
+The `deploy.sh` script provides automated deployment with the following options:
+
+**Basic usage:**
+```bash
+./deploy.sh <TESTBED> [PORT] [EPEM_ENDPOINT] [DOC_ENDPOINT]
+```
+
+**Parameters:**
+- `TESTBED` (required): The testbed environment - CNIT, UPC, or UMU
+- `PORT` (optional): Custom port number (default: 8000 for CNIT/UPC, 8003 for UMU)
+- `EPEM_ENDPOINT` (optional): Custom EPEM endpoint URL (e.g., http://192.168.130.233:5002)
+- `DOC_ENDPOINT` (optional): Custom DOC endpoint URL (e.g., http://192.168.130.62:8001)
+
+**Examples:**
+```bash
+# Deploy to CNIT with default settings
+./deploy.sh CNIT
+
+# Deploy to UMU with default settings (uses port 8003)
+./deploy.sh UMU
+
+# Deploy to CNIT with custom port
+./deploy.sh CNIT 8080
+
+# Deploy to UPC with custom endpoints
+./deploy.sh UPC 8000 http://10.19.2.20:5002 http://10.19.2.19:8001
+```
+
+The script automatically:
+- Detects your machine's IP address for callback URL configuration
+- Updates the `.env` file with the specified configuration
+- Sets RTR_HOST and RTR_PORT for status callback functionality
+- Builds and starts the Docker containers
+- Displays the deployment configuration summary
 
 ## Docker
-This Dockerfile sets up an environment for running [rtr-api](https://github.com/Eight-Bells-Ltd/Reliability-Trust-Resilience-RTR/blob/main/IBI-RTR_api.py). It begins by specifying the base image as Python 3.11.5, establishing the working directory within the container as /app. Dependencies listed in requirements.txt are then installed using pip, ensuring the necessary packages are available. The FastAPI application code is copied into the container's working directory. Port 8000 is exposed to allow external access to the FastAPI application. Finally, the Dockerfile specifies the command to run the application, launching it with Uvicorn and binding to host 0.0.0.0 and port 8000. This Dockerfile encapsulates all the steps needed to build a Docker image capable of running the FastAPI application within a container, providing a consistent and reproducible environment for deployment.
+This Dockerfile sets up an environment for running [rtr-api](https://github.com/HORSE-EU-Project/RTR/blob/main/IBI-RTR_api.py). It begins by specifying the base image as Python 3.11.5, establishing the working directory within the container as /app. Dependencies listed in requirements.txt are then installed using pip, ensuring the necessary packages are available. The FastAPI application code is copied into the container's working directory. Port 8000 is exposed to allow external access to the FastAPI application. Finally, the Dockerfile specifies the command to run the application, launching it with Uvicorn and binding to host 0.0.0.0 and port 8000. This Dockerfile encapsulates all the steps needed to build a Docker image capable of running the FastAPI application within a container, providing a consistent and reproducible environment for deployment.
 
 ## Docker-compose
-This Docker Compose file [docker-compose.yml](https://github.com/Eight-Bells-Ltd/Reliability-Trust-Resilience-RTR/blob/main/docker-compose.yml) defines a multi-container application with two services: [rtr-api](https://github.com/Eight-Bells-Ltd/Reliability-Trust-Resilience-RTR/blob/main/IBI-RTR_api.py) and mongodb. Here's what each section does:
+This Docker Compose file [docker-compose.yml](https://github.com/HORSE-EU-Project/RTR/blob/main/docker-compose.yml) defines a multi-container application with two services: [rtr-api](https://github.com/HORSE-EU-Project/RTR/blob/main/IBI-RTR_api.py) and mongodb. Here's what each section does:
 1. rtr-api Service:
 Builds the Docker image for the rtr-api service using the Dockerfile in the current directory. We map port 8000 on the host to port 8000 in the container, allowing access to the FastAPI application running inside the container. We mount the current directory (where the Docker Compose file is located) to the /app directory inside the container, allowing live code reloading during development. This service depends on mongodb, meaning that the mongodb service needs to be up and running first. Finally, we connect the rtr-api service to the rtr-network network.
 2. mongodb service:
-We specify the Docker image to use for the mongodb service. We also set the container name to "mongodb" and configure the container to restart if it terminates unexpectedly. We  map default port 27017 on the host to port 27017 in the container, allowing access to the MongoDB server. The environment variables for configuring MongoDB are the root username and password for the MongoDB instance. We define volumes for persisting MongoDB data, initializing the database with [mongo-init.js](https://github.com/Eight-Bells-Ltd/Reliability-Trust-Resilience-RTR/blob/main/mongo-init.js), and providing a custom MongoDB configuration file [mongod.conf](https://github.com/Eight-Bells-Ltd/Reliability-Trust-Resilience-RTR/blob/main/mongod.conf). Finally, we also connect 'mongodb' to the rtr-network.
- - [mongo-init.js](https://github.com/Eight-Bells-Ltd/Reliability-Trust-Resilience-RTR/blob/main/mongo-init.js) creates two collections, each with a predefined structure enforced by JSON schemas for validation. The "mitigation_actions" collection specifies requirements for documents representing mitigation actions, including fields like intent type, threat, and duration. Similarly, the "users" collection defines constraints for user documents, mandating fields such as username, email, and password, with email validation using a regular expression. These schemas ensure data consistency and integrity by validating documents against specified criteria upon insertion or update, enhancing the reliability and usability of the MongoDB database.
- - [mongod.conf](https://github.com/Eight-Bells-Ltd/Reliability-Trust-Resilience-RTR/blob/main/mongod.conf) specifies the settings for running a MongoDB instance. In the storage section, the dbPath parameter indicates the directory where MongoDB will store its database files, set here to /data/db. The network settings define that MongoDB will bind to all available network interfaces (0.0.0.0) and listen on port 27017. Additionally, the security section enables access control and user authentication by setting authorization to enabled. This ensures that clients must authenticate themselves before accessing the database, enhancing the security of the MongoDB instance. Overall, this configuration file establishes a MongoDB environment with specified storage, network, and security settings.
+We specify the Docker image to use for the mongodb service. We also set the container name to "mongodb" and configure the container to restart if it terminates unexpectedly. We  map default port 27017 on the host to port 27017 in the container, allowing access to the MongoDB server. The environment variables for configuring MongoDB are the root username and password for the MongoDB instance. We define volumes for persisting MongoDB data, initializing the database with [mongo-init.js](https://github.com/HORSE-EU-Project/RTR/blob/main/mongo-init.js), and providing a custom MongoDB configuration file [mongod.conf](https://github.com/HORSE-EU-Project/RTR/blob/main/db_confs/mongod.conf). Finally, we also connect 'mongodb' to the rtr-network.
+ - [mongo-init.js](https://github.com/HORSE-EU-Project/RTR/blob/main/mongo-init.js) creates two collections, each with a predefined structure enforced by JSON schemas for validation. The "mitigation_actions" collection specifies requirements for documents representing mitigation actions, including fields like intent type, threat, and duration. Similarly, the "users" collection defines constraints for user documents, mandating fields such as username, email, and password, with email validation using a regular expression. These schemas ensure data consistency and integrity by validating documents against specified criteria upon insertion or update, enhancing the reliability and usability of the MongoDB database.
+ - [mongod.conf](https://github.com/HORSE-EU-Project/RTR/blob/main/db_confs/mongod.conf) specifies the settings for running a MongoDB instance. In the storage section, the dbPath parameter indicates the directory where MongoDB will store its database files, set here to /data/db. The network settings define that MongoDB will bind to all available network interfaces (0.0.0.0) and listen on port 27017. Additionally, the security section enables access control and user authentication by setting authorization to enabled. This ensures that clients must authenticate themselves before accessing the database, enhancing the security of the MongoDB instance. Overall, this configuration file establishes a MongoDB environment with specified storage, network, and security settings.
   
 
 
@@ -71,7 +114,7 @@ The RTR was developed for the purposes of HORSE and it should receive input from
     "ansible_command": e.g. ""
 }
 
-We validate the JSON against the schema requirements before processing. The mitigation action is then transformed into an Ansible playbook based on the mapping defined in [mitigation_ansible_map.json](https://github.com/Eight-Bells-Ltd/Reliability-Trust-Resilience-RTR/blob/main/RTR_configurations/mitigation_ansible_map.json). After successful creation, the action is stored in memory and its status is tracked throughout the execution lifecycle.
+We validate the JSON against the schema requirements before processing. The mitigation action is then transformed into an Ansible playbook based on the mapping defined in [mitigation_ansible_map.json](https://github.com/HORSE-EU-Project/RTR/blob/main/RTR_configurations/mitigation_ansible_map.json). After successful creation, the action is stored in memory and its status is tracked throughout the execution lifecycle.
 
 # Get actions
 We expose 2 GET interfaces:
@@ -81,7 +124,7 @@ We expose 2 GET interfaces:
 ## Configuration Management
 
 # Mitigation Action to Playbook Mapping
-The RTR uses a configuration file [mitigation_ansible_map.json](https://github.com/Eight-Bells-Ltd/Reliability-Trust-Resilience-RTR/blob/main/RTR_configurations/mitigation_ansible_map.json) to map mitigation action types to their corresponding Ansible playbook files. This mapping file contains:
+The RTR uses a configuration file [mitigation_ansible_map.json](https://github.com/HORSE-EU-Project/RTR/blob/main/RTR_configurations/mitigation_ansible_map.json) to map mitigation action types to their corresponding Ansible playbook files. This mapping file contains:
 
 - **action_name_to_playbook**: A dictionary that maps action names (e.g., "DNS_RATE_LIMITING", "BLOCK_POD_ADDRESS") to their corresponding playbook paths (e.g., "ansible_playbooks/dns_rate_limiting.yaml")
 - **metadata**: Version information, description, and last update timestamp
