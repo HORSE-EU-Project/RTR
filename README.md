@@ -1,21 +1,64 @@
-# Reliable Trust Resilience
+# Reliable Trust Resilience (RTR)
 
-RTR is a software tool developed for the HORSE project. The purpose of the RTR is to accept a mitigation action for an attack targeting a network topology. This mitigation action is basically a JSON containing information both on the attack and the mitigation action that counters it. The RTR then extracts the useful information from this file and configures an Ansible Playbook. This Playbook is then sent to an enforcer, who uses it to configure parts of the network.
+RTR is an intent-based cybersecurity orchestration software developed for the HORSE project. It manages mitigation and prevention actions for network security threats through intelligent automation.
+
+## Overview
+
+RTR serves as a bridge between security intent and infrastructure enforcement. The software:
+
+- **Accepts security actions** in both structured (JSON) and unstructured (natural language) formats
+- **Translates intents** into infrastructure-as-code languages (currently Ansible playbooks)
+- **Enriches actions** with necessary metadata including target domains, hosts, durations, and callback URLs
+- **Distributes playbooks** to specified enforcement endpoints (ePEM or DOC) for execution on the network infrastructure
+
+This approach enables security teams to express mitigation strategies in high-level terms while RTR handles the technical translation and orchestration required for actual implementation across distributed network environments.
 
 ## Installation
 
-Download and run the application:
-- git clone https://github.com/HORSE-EU-Project/RTR.git
-- cd RTR
-- git checkout develop  # or main, depending on which branch you want to use
-- Copy .env.example to .env and configure your environment variables (if .env.example exists)
-- Deploy using the deployment script: `./deploy.sh --deployment_domain <DOMAIN>` where DOMAIN is CNIT, UPC, or UMU
+### Prerequisites
+- Docker and Docker Compose installed
+- Git
+- Bash shell (Linux/macOS/WSL/Git Bash on Windows)
 
-Alternatively, you can run with Docker Compose directly:
-- docker compose build
-- docker compose up -d  # -d runs the application in the background
+### Quick Start
 
-For more deployment options, run: `./deploy.sh --help` to see usage instructions.
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/HORSE-EU-Project/RTR.git
+   cd RTR
+   ```
+
+2. **Choose your branch:**
+   ```bash
+   git checkout develop  # Development branch (latest features)
+   # or
+   git checkout main     # Stable release branch
+   ```
+
+3. **Configure environment variables:**
+   - The `.env` file contains default configurations
+   - Verify or update MongoDB credentials, testbed endpoints, and ports as needed
+
+4. **Deploy using the deployment script:**
+   ```bash
+   ./deploy.sh --deployment_domain <DOMAIN>
+   ```
+   Where `<DOMAIN>` is one of: CNIT, UPC, or UMU
+
+### Alternative: Manual Docker Compose Deployment
+
+If you prefer manual control:
+```bash
+docker compose build
+docker compose up -d  # -d runs in detached mode (background)
+```
+
+### Getting Help
+
+For all deployment options and parameters:
+```bash
+./deploy.sh --help
+```
 
 ## Deployment Script
 
