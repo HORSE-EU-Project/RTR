@@ -117,68 +117,106 @@ We specify the Docker image to use for the mongodb service. We also set the cont
   
 
 
-## The main App
+## API Architecture
 
-The application's functionality are fostered by FastAPI. The FastAPI application implements the following endpoints:
-- root (GET): A welcome page.
-- user register (POST): A registration interface for new users.
-- user login (POST): A log-in interface for existing users. (OAuth 2.0)
-- post an action (POST): Sends a new action to the RTR. (OAuth 2.0)
-- get actions (GET): Requests all of the available actions currently stored inside the API. (OAuth 2.0)
-- get specific action (GET): Requests a specific action based on the action's unique ID. (OAuth 2.0)
-- update action status (POST): Updates an action's status based on the action's unique ID. (OAuth 2.0)
-- reload configuration (POST): Reloads the mitigation action to playbook mappings without restarting the container. (OAuth 2.0)
-- get action mappings (GET): Retrieves all currently loaded mitigation action to playbook mappings. (OAuth 2.0)
+The application is powered by FastAPI and implements the following REST endpoints:
 
-All endpoints except root, register, and login are protected with OAuth 2.0 authentication.
+### Public Endpoints
+- **root (GET)**: Welcome page and API information
+- **user register (POST)**: Registration interface for new users
+- **user login (POST)**: Authentication interface for existing users (OAuth 2.0)
 
+### Protected Endpoints (OAuth 2.0 Required)
+- **post an action (POST)**: Submit a new mitigation/prevention action to RTR
+- **get actions (GET)**: Retrieve all actions currently stored in the system
+- **get specific action (GET)**: Retrieve a specific action by its unique intent_id
+- **update action status (POST)**: Update an action's status by its intent_id
+- **reload configuration (POST)**: Reload mitigation action to playbook mappings without restart
+- **get action mappings (GET)**: Retrieve all currently loaded action-to-playbook mappings
 
-# User registration
-In order to create a new user, we request 3 fields:
-- username
-- password
-- email
-The authentication uses the combination of the username and the password. The user's information are stored in our users collection inside our mongoDB database.
+All endpoints except root, register, and login require OAuth 2.0 authentication.
 
-# User login
-In order for the user to interact with the rest of the interfaces a Log-In is required. By logging in with their credentials users receive an authentication token. This authentication token is required as a header to the requests.
+## Authentication
 
-We followed the implementation in this article https://manjeetkapil.medium.com/create-a-authentication-system-using-react-fastapi-and-mongodb-farm-stack-d2ea6a35bf47 for the authorization aspects of the application.
+### User Registration
+To create a new user, provide:
+- **username**: Unique identifier for the user
+- **password**: Secure password for authentication
+- **email**: Valid email address
 
-# Post an action
-The RTR was developed for the purposes of HORSE and it should receive input from IBI (Intent Based Interface). The partners from TUBS will provide us with JSONs describing mitigation actions in certain parts of the network topology. This is an example of such an action:
+User credentials are securely stored in the MongoDB users collection.
 
+### User Login
+Users must authenticate to interact with protected endpoints. Upon successful login with valid credentials, users receive an authentication token that must be included in the Authorization header for subsequent requests.
+
+Authentication implementation follows the pattern described in [this article](https://manjeetkapil.medium.com/create-a-authentication-system-using-react-fastapi-and-mongodb-farm-stack-d2ea6a35bf47).
+
+## Submitting Mitigation Actions
+## Submitting Mitigation Actions
+
+RTR accepts security actions from the Intent-Based Interface (IBI) component. Actions can be submitted in two formats:
+
+### Structured Format (JSON)
+A complete JSON action includes:
+
+```json
 {
     "command": "add",
-    "intent_type": "mitigation" or "prevention",
-    "threat": e.g. "ddos",
-    "attacked_host": e.g. "10.0.0.1",
-    "mitigation_host": e.g. "172.16.2.1",
-    "action": e.g. "Block potentially spoofed packets with destination 192.68.0.0/24 in interface wlan0",
-    "duration": e.g. 7000,
-    "intent_id": e.g. "ABC123",
-    "target_domain": e.g. "CNIT" or "UPC",
-    "status": e.g. "pending",
-    "info": e.g. "Blocking spoofed packets in the specified IP range on wlan0 interface.",
-    "ansible_command": e.g. ""
+    "intent_type": "mitigation",
+    "threat": "ddos",
+    "attacked_host": "10.0.0.1",
+    "mitigation_host": "172.16.2.1",
+    "action": {
+        "name": "block_pod_address",
+        "intent_id": "ABC123",
+        "fields": {
+            "blocked_ips": ["192.168.0.10"],
+            "duration": 7000
+        }
+    },
+    "duration": 7000,
+    "intent_id": "ABC123",
+    "target_domain": "CNIT",
+    "status": "pending",
+    "info": "Blocking spoofed packets in the specified IP range.",
+    "ansible_command": ""
 }
+```
 
-We validate the JSON against the schema requirements before processing. The mitigation action is then transformed into an Ansible playbook based on the mapping defined in [mitigation_ansible_map.json](https://github.com/HORSE-EU-Project/RTR/blob/main/RTR_configurations/mitigation_ansible_map.json). After successful creation, the action is stored in memory and its status is tracked throughout the execution lifecycle.
+### Unstructured Format (Natural Language)
+Alternatively, actions can be expressed in natural language:
 
-# Get actions
-We expose 2 GET interfaces:
-- The 1st interface returns every action currently stored in the application's in-memory storage
-- The 2nd interface returns a specific action based on its unique intent_id
+```json
+{
+    "intent_id": "ABC124",
+    "action": "Block potentially spoofed packets with destination 192.68.0.0/24 in interface wlan0"
+}
+```
+
+### Processing Pipeline
+
+1. **Validation**: The action is validated against schema requirements
+2. **Translation**: The action is transformed into an Ansible playbook based on mappings defined in [mitigation_ansible_map.json](https://github.com/HORSE-EU-Project/RTR/blob/main/RTR_configurations/mitigation_ansible_map.json)
+3. **Enrichment**: Metadata (callback URLs, timestamps, target domains) is added
+4. **Storage**: The action is stored in MongoDB with status tracking
+5. **Distribution**: The playbook is sent to the appropriate enforcement endpoint (ePEM or DOC)
+
+## Retrieving Actions
+
+RTR provides two GET endpoints for action retrieval:
+- **GET /actions**: Returns all actions currently stored in the system
+- **GET /actions/{intent_id}**: Returns a specific action by its unique intent_id
 
 ## Configuration Management
 
-# Mitigation Action to Playbook Mapping
+### Mitigation Action to Playbook Mapping
+
 The RTR uses a configuration file [mitigation_ansible_map.json](https://github.com/HORSE-EU-Project/RTR/blob/main/RTR_configurations/mitigation_ansible_map.json) to map mitigation action types to their corresponding Ansible playbook files. This mapping file contains:
 
 - **action_name_to_playbook**: A dictionary that maps action names (e.g., "DNS_RATE_LIMITING", "BLOCK_POD_ADDRESS") to their corresponding playbook paths (e.g., "ansible_playbooks/dns_rate_limiting.yaml")
 - **metadata**: Version information, description, and last update timestamp
 
-When a mitigation action is received, the RTR extracts the action type from the JSON payload and uses this mapping to determine which Ansible playbook template to use. This design allows for easy addition of new mitigation actions by simply updating the configuration file without modifying the application code.
+When a mitigation action is received, RTR extracts the action type from the JSON payload and uses this mapping to determine which Ansible playbook template to use. This design allows for easy addition of new mitigation actions by simply updating the configuration file without modifying the application code.
 
 Example mapping:
 ```json
@@ -186,12 +224,13 @@ Example mapping:
   "action_name_to_playbook": {
     "DNS_RATE_LIMITING": "ansible_playbooks/dns_rate_limiting.yaml",
     "BLOCK_POD_ADDRESS": "ansible_playbooks/block_pod_address.yaml",
-    "API_RATE_LIMITING": "ansible_playbooks/dns_rate_limiting.yaml"
+    "API_RATE_LIMITING": "ansible_playbooks/api_rate_limiting.yaml"
   }
 }
 ```
 
-# Reload Configuration
+### Reload Configuration
+
 The `/api/reload-config` endpoint (POST) allows authenticated users to reload the mitigation_ansible_map.json file without restarting the Docker container. This is useful when:
 - New mitigation action mappings are added
 - Existing mappings are updated
@@ -199,7 +238,8 @@ The `/api/reload-config` endpoint (POST) allows authenticated users to reload th
 
 The endpoint returns status information about the reload operation, including which configuration files were reloaded and any errors encountered.
 
-# Get Action Mappings
+### Get Action Mappings
+
 The `/api/config/actions` endpoint (GET) allows authenticated users to retrieve all currently loaded mitigation action to playbook mappings. This is useful for:
 - Verifying which mitigation actions are currently supported
 - Debugging configuration issues
@@ -207,5 +247,6 @@ The `/api/config/actions` endpoint (GET) allows authenticated users to retrieve 
 
 The endpoint returns the total number of mappings and the complete action_name_to_playbook dictionary.
 
-# Update Action Status
-The `/update_action_status` endpoint allows you to update the status of a previously submitted mitigation action. This operation is useful for reflecting the current state of an action, such as when a mitigation process has been completed or encounters an issue. The endpoint accepts an intent_id, status, and optional info field to provide detailed status updates.
+## Update Action Status
+
+The `/update_action_status` endpoint allows enforcement endpoints to update the status of a previously submitted mitigation action. This operation reflects the current state of an action, such as when a mitigation process has been completed or encounters an issue. The endpoint accepts an intent_id, status, and optional info field to provide detailed status updates.
