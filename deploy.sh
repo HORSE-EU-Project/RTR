@@ -1,39 +1,78 @@
 #!/bin/bash
 
-# Define environment variables
-if [ -z "$1" ]; then
-  echo "Usage: $0 <TESTBED> [PORT] [EPEM_ENDPOINT] [DOC_ENDPOINT]"
-  echo "  TESTBED: CNIT, UPC, or UMU"
-  echo "  PORT: Optional port number (default: 8000 for CNIT/UPC, 8003 for UMU)"
-  echo "  EPEM_ENDPOINT: Optional EPEM endpoint URL (e.g., http://192.168.130.233:5002)"
-  echo "  DOC_ENDPOINT: Optional DOC endpoint URL (e.g., http://192.168.130.62:8001)"
+# Function to display usage
+show_usage() {
+  echo "Usage: $0 --deployment_domain <DOMAIN> [OPTIONS]"
+  echo ""
+  echo "Required arguments:"
+  echo "  --deployment_domain <DOMAIN>    Deployment domain: CNIT, UPC, or UMU"
+  echo ""
+  echo "Optional arguments:"
+  echo "  --port <PORT>                   Custom port number (default: 8000 for CNIT/UPC, 8003 for UMU)"
+  echo "  --epem <URL>                    EPEM endpoint URL (e.g., http://192.168.130.233:5002)"
+  echo "  --doc <URL>                     DOC endpoint URL (e.g., http://192.168.130.62:8001)"
+  echo "  -h, --help                      Show this help message"
   echo ""
   echo "Examples:"
-  echo "  $0 CNIT        # Uses port 8000 and default endpoints from .env"
-  echo "  $0 UMU         # Uses port 8003 and default endpoints from .env"
-  echo "  $0 CNIT 8080   # Uses custom port 8080"
-  echo "  $0 CNIT 8000 http://10.0.0.1:5002 http://10.0.0.2:8001   # Custom endpoints"
+  echo "  $0 --deployment_domain CNIT"
+  echo "  $0 --deployment_domain UMU --port 8080"
+  echo "  $0 --deployment_domain UPC --epem http://10.19.2.20:5002 --doc http://10.19.2.19:8001"
+  echo "  $0 --deployment_domain CNIT --port 8000 --epem http://10.0.0.1:5002 --doc http://10.0.0.2:8001"
   exit 1
-fi
+}
 
-# Get testbed argument and convert to uppercase
-TESTBED=$(echo "$1" | tr '[:lower:]' '[:upper:]')
+# Initialize variables
+TESTBED=""
+PORT=""
+EPEM_ENDPOINT=""
+DOC_ENDPOINT=""
+
+# Parse command line arguments
+while [[ $# -gt 0 ]]; do
+  case $1 in
+    --deployment_domain)
+      TESTBED=$(echo "$2" | tr '[:lower:]' '[:upper:]')
+      shift 2
+      ;;
+    --port)
+      PORT="$2"
+      shift 2
+      ;;
+    --epem)
+      EPEM_ENDPOINT="$2"
+      shift 2
+      ;;
+    --doc)
+      DOC_ENDPOINT="$2"
+      shift 2
+      ;;
+    -h|--help)
+      show_usage
+      ;;
+    *)
+      echo "❌ Error: Unknown option $1"
+      show_usage
+      ;;
+  esac
+done
+
+# Check if deployment_domain is provided
+if [ -z "$TESTBED" ]; then
+  echo "❌ Error: --deployment_domain is required"
+  show_usage
+fi
 
 # Validate testbed argument
 if [ "$TESTBED" != "CNIT" ] && [ "$TESTBED" != "UPC" ] && [ "$TESTBED" != "UMU" ]; then
-  echo "❌ Error: Invalid testbed '$1'"
+  echo "❌ Error: Invalid deployment domain '$TESTBED'"
   echo "Valid options: CNIT, UPC, UMU"
   exit 1
 fi
 
 echo "🚀 Deploying RTR API for testbed: $TESTBED"
 
-# Set PORT based on testbed or use custom port from argument
-if [ -n "$2" ]; then
-  # Custom port provided as second argument
-  PORT=$2
-  echo "📝 Using custom port: $PORT"
-else
+# Set PORT based on testbed if not provided
+if [ -z "$PORT" ]; then
   # Default port based on testbed
   if [ "$TESTBED" = "UMU" ]; then
     PORT=8003
@@ -41,23 +80,21 @@ else
     PORT=8000
   fi
   echo "📝 Using default port for $TESTBED: $PORT"
+else
+  echo "📝 Using custom port: $PORT"
 fi
 
-# Handle optional EPEM endpoint
-if [ -n "$3" ]; then
-  EPEM_ENDPOINT="$3"
+# Handle EPEM endpoint
+if [ -n "$EPEM_ENDPOINT" ]; then
   echo "📝 Setting custom EPEM endpoint: $EPEM_ENDPOINT"
 else
-  EPEM_ENDPOINT=""
   echo "📝 Using default EPEM endpoint from .env"
 fi
 
-# Handle optional DOC endpoint
-if [ -n "$4" ]; then
-  DOC_ENDPOINT="$4"
+# Handle DOC endpoint
+if [ -n "$DOC_ENDPOINT" ]; then
   echo "📝 Setting custom DOC endpoint: $DOC_ENDPOINT"
 else
-  DOC_ENDPOINT=""
   echo "📝 Using default DOC endpoint from .env"
 fi
 

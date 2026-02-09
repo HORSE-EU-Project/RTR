@@ -9,42 +9,48 @@ Download and run the application:
 - cd RTR
 - git checkout develop  # or main, depending on which branch you want to use
 - Copy .env.example to .env and configure your environment variables (if .env.example exists)
-- Deploy using the deployment script: `./deploy.sh <TESTBED>` where TESTBED is CNIT, UPC, or UMU
+- Deploy using the deployment script: `./deploy.sh --deployment_domain <DOMAIN>` where DOMAIN is CNIT, UPC, or UMU
 
 Alternatively, you can run with Docker Compose directly:
 - docker compose build
 - docker compose up -d  # -d runs the application in the background
 
-For more deployment options, run: `./deploy.sh` to see usage instructions.
+For more deployment options, run: `./deploy.sh --help` to see usage instructions.
 
 ## Deployment Script
 
-The `deploy.sh` script provides automated deployment with the following options:
+The `deploy.sh` script provides automated deployment with named arguments for clarity and flexibility:
 
 **Basic usage:**
 ```bash
-./deploy.sh <TESTBED> [PORT] [EPEM_ENDPOINT] [DOC_ENDPOINT]
+./deploy.sh --deployment_domain <DOMAIN> [OPTIONS]
 ```
 
-**Parameters:**
-- `TESTBED` (required): The testbed environment - CNIT, UPC, or UMU
-- `PORT` (optional): Custom port number (default: 8000 for CNIT/UPC, 8003 for UMU)
-- `EPEM_ENDPOINT` (optional): Custom EPEM endpoint URL (e.g., http://192.168.130.233:5002)
-- `DOC_ENDPOINT` (optional): Custom DOC endpoint URL (e.g., http://192.168.130.62:8001)
+**Required arguments:**
+- `--deployment_domain <DOMAIN>`: The testbed environment - CNIT, UPC, or UMU
+
+**Optional arguments:**
+- `--port <PORT>`: Custom port number (default: 8000 for CNIT/UPC, 8003 for UMU)
+- `--epem <URL>`: EPEM endpoint URL (e.g., http://192.168.130.233:5002)
+- `--doc <URL>`: DOC endpoint URL (e.g., http://192.168.130.62:8001)
+- `-h, --help`: Show help message
 
 **Examples:**
 ```bash
 # Deploy to CNIT with default settings
-./deploy.sh CNIT
+./deploy.sh --deployment_domain CNIT
 
 # Deploy to UMU with default settings (uses port 8003)
-./deploy.sh UMU
+./deploy.sh --deployment_domain UMU
 
 # Deploy to CNIT with custom port
-./deploy.sh CNIT 8080
+./deploy.sh --deployment_domain CNIT --port 8080
 
-# Deploy to UPC with custom endpoints
-./deploy.sh UPC 8000 http://10.19.2.20:5002 http://10.19.2.19:8001
+# Deploy to UPC with custom EPEM endpoint
+./deploy.sh --deployment_domain UPC --epem http://10.19.2.20:5002
+
+# Deploy to CNIT with all custom settings
+./deploy.sh --deployment_domain CNIT --port 8000 --epem http://10.0.0.1:5002 --doc http://10.0.0.2:8001
 ```
 
 The script automatically:
