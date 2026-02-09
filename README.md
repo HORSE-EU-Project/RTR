@@ -103,17 +103,43 @@ The script automatically:
 - Builds and starts the Docker containers
 - Displays the deployment configuration summary
 
-## Docker
-This Dockerfile sets up an environment for running [rtr-api](https://github.com/HORSE-EU-Project/RTR/blob/main/IBI-RTR_api.py). It begins by specifying the base image as Python 3.11.5, establishing the working directory within the container as /app. Dependencies listed in requirements.txt are then installed using pip, ensuring the necessary packages are available. The FastAPI application code is copied into the container's working directory. Port 8000 is exposed to allow external access to the FastAPI application. Finally, the Dockerfile specifies the command to run the application, launching it with Uvicorn and binding to host 0.0.0.0 and port 8000. This Dockerfile encapsulates all the steps needed to build a Docker image capable of running the FastAPI application within a container, providing a consistent and reproducible environment for deployment.
+## Container Architecture
 
-## Docker-compose
-This Docker Compose file [docker-compose.yml](https://github.com/HORSE-EU-Project/RTR/blob/main/docker-compose.yml) defines a multi-container application with two services: [rtr-api](https://github.com/HORSE-EU-Project/RTR/blob/main/IBI-RTR_api.py) and mongodb. Here's what each section does:
-1. rtr-api Service:
-Builds the Docker image for the rtr-api service using the Dockerfile in the current directory. We map port 8000 on the host to port 8000 in the container, allowing access to the FastAPI application running inside the container. We mount the current directory (where the Docker Compose file is located) to the /app directory inside the container, allowing live code reloading during development. This service depends on mongodb, meaning that the mongodb service needs to be up and running first. Finally, we connect the rtr-api service to the rtr-network network.
-2. mongodb service:
-We specify the Docker image to use for the mongodb service. We also set the container name to "mongodb" and configure the container to restart if it terminates unexpectedly. We  map default port 27017 on the host to port 27017 in the container, allowing access to the MongoDB server. The environment variables for configuring MongoDB are the root username and password for the MongoDB instance. We define volumes for persisting MongoDB data, initializing the database with [mongo-init.js](https://github.com/HORSE-EU-Project/RTR/blob/main/mongo-init.js), and providing a custom MongoDB configuration file [mongod.conf](https://github.com/HORSE-EU-Project/RTR/blob/main/db_confs/mongod.conf). Finally, we also connect 'mongodb' to the rtr-network.
- - [mongo-init.js](https://github.com/HORSE-EU-Project/RTR/blob/main/mongo-init.js) creates two collections, each with a predefined structure enforced by JSON schemas for validation. The "mitigation_actions" collection specifies requirements for documents representing mitigation actions, including fields like intent type, threat, and duration. Similarly, the "users" collection defines constraints for user documents, mandating fields such as username, email, and password, with email validation using a regular expression. These schemas ensure data consistency and integrity by validating documents against specified criteria upon insertion or update, enhancing the reliability and usability of the MongoDB database.
- - [mongod.conf](https://github.com/HORSE-EU-Project/RTR/blob/main/db_confs/mongod.conf) specifies the settings for running a MongoDB instance. In the storage section, the dbPath parameter indicates the directory where MongoDB will store its database files, set here to /data/db. The network settings define that MongoDB will bind to all available network interfaces (0.0.0.0) and listen on port 27017. Additionally, the security section enables access control and user authentication by setting authorization to enabled. This ensures that clients must authenticate themselves before accessing the database, enhancing the security of the MongoDB instance. Overall, this configuration file establishes a MongoDB environment with specified storage, network, and security settings.
+### Docker
+The Dockerfile sets up an environment for running the [RTR API](https://github.com/HORSE-EU-Project/RTR/blob/main/IBI-RTR_api.py). Key features:
+
+- **Base Image**: Python 3.11.5
+- **Working Directory**: /app
+- **Dependencies**: Installed from requirements.txt via pip
+- **Application Code**: Copied into container's working directory
+- **Exposed Port**: 8000 for external access
+- **Launch Command**: Uvicorn server binding to 0.0.0.0:8000
+
+This provides a consistent and reproducible environment for deployment.
+
+### Docker Compose
+The [docker-compose.yml](https://github.com/HORSE-EU-Project/RTR/blob/main/docker-compose.yml) file defines a multi-container application with two services:
+
+**1. rtr-api Service:**
+- Builds the Docker image from the local Dockerfile
+- Maps port 8000 (host) to 8000 (container) for API access
+- Mounts the current directory to /app for live code reloading during development
+- Depends on mongodb service (starts after MongoDB is ready)
+- Connected to rtr-network
+
+**2. mongodb Service:**
+- Uses official MongoDB 4.4 image
+- Container name: "mongodb"
+- Auto-restart: enabled
+- Port mapping: 27017 (host) to 27017 (container)
+- Environment: Root username and password configured via .env
+- Volumes:
+  - **mongodb_data**: Persistent data storage
+  - **[mongo-init.js](https://github.com/HORSE-EU-Project/RTR/blob/main/mongo-init.js)**: Database initialization with collection schemas for "mitigation_actions" and "users"
+  - **[mongod.conf](https://github.com/HORSE-EU-Project/RTR/blob/main/db_confs/mongod.conf)**: Custom MongoDB configuration (storage path, network binding, authentication)
+- Connected to rtr-network
+
+The MongoDB collections enforce JSON schema validation to ensure data consistency and integrity for mitigation actions and user credentials.
   
 
 
